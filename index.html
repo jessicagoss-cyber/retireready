@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RetireReady</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Sans 3',sans-serif;background:#f0f2fb;min-height:100vh}
+.view{display:none}
+.view.active{display:block}
+
+/* ── NAV (dashboard only) ── */
+.d-nav{background:#111d6e;display:flex}
+.d-nav-btn{flex:1;padding:12px 8px;border:none;background:none;color:#a8b8e0;font-family:'Source Sans 3',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s}
+.d-nav-btn.active{color:#e8e4f8;border-bottom-color:#7ea8e8;background:rgba(255,255,255,0.05)}
+
+/* ── HEADER ── */
+.header{background:#1a3a8f;padding:28px 24px;text-align:center}
+.logo{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:#e8e4f8}
+.logo span{color:#7ea8e8}
+.tagline{font-size:12px;color:#a8b8e0;margin-top:5px;letter-spacing:1.2px;text-transform:uppercase}
+
+/* ── FORM ── */
+.f-body{max-width:480px;margin:0 auto;padding:24px 20px 60px}
+.f-intro{background:white;border-radius:12px;padding:18px 20px;margin-bottom:16px;border-left:4px solid #1a3a8f}
+.f-intro p{font-size:13px;color:#3d3d3a;line-height:1.65;font-weight:300}
+.f-intro strong{color:#1a3a8f;font-weight:600}
+.f-card{background:white;border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(26,58,143,0.07)}
+.f-section{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#1a3a8f;margin:20px 0 10px;padding-bottom:5px;border-bottom:1px solid #e8e4dc}
+.f-section:first-child{margin-top:0}
+.f-field{margin-bottom:12px}
+.f-field label{display:block;font-size:11px;font-weight:600;color:#555;margin-bottom:4px}
+.f-field input,.f-field select,.f-field textarea{width:100%;padding:10px 12px;border:1.5px solid #e0dbd0;border-radius:8px;font-family:'Source Sans 3',sans-serif;font-size:14px;color:#1a1a1a;background:#fafaf7;transition:border-color 0.2s;-webkit-appearance:none;appearance:none}
+.f-field input:focus,.f-field select:focus,.f-field textarea:focus{outline:none;border-color:#1a3a8f;background:white}
+.f-field textarea{min-height:80px;resize:vertical;line-height:1.6}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.contact-options{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.contact-options label{display:flex;align-items:center;justify-content:center;font-size:13px;color:#3d3d3a;cursor:pointer;padding:9px 12px;border:1.5px solid #e0dbd0;border-radius:8px;background:#fafaf7;flex:1;min-width:100px;text-align:center;transition:border-color 0.2s,background 0.2s}
+.contact-options input[type="radio"]{display:none}
+.contact-options label:has(input:checked){border-color:#1a3a8f;background:#f0f4fc;color:#1a3a8f;font-weight:600}
+.check-options{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.check-item{display:flex;align-items:center;gap:8px;font-size:13px;color:#3d3d3a;cursor:pointer;padding:9px 12px;border:1.5px solid #e0dbd0;border-radius:8px;background:#fafaf7;width:100%;transition:border-color 0.2s,background 0.2s}
+.check-item input[type="checkbox"]{width:15px;height:15px;accent-color:#1a3a8f;flex-shrink:0}
+.check-item:has(input:checked){border-color:#1a3a8f;background:#f0f4fc;color:#1a3a8f;font-weight:600}
+.f-submit{width:100%;padding:14px;background:#1a3a8f;color:#e8e4f8;border:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:16px;font-weight:500;cursor:pointer;margin-top:20px;transition:background 0.2s}
+.f-submit:hover{background:#111d6e}
+.f-submit:disabled{background:#888;cursor:not-allowed}
+.f-privacy{font-size:11px;color:#aaa;text-align:center;margin-top:10px;line-height:1.5}
+.f-success{display:none;text-align:center;padding:20px 0}
+.f-success.show{display:block}
+.f-checkmark{width:64px;height:64px;background:#1a3a8f;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.f-checkmark svg{width:30px;height:30px}
+.f-success h2{font-family:'Playfair Display',serif;font-size:22px;color:#1a3a8f;margin-bottom:10px}
+.f-success p{font-size:13px;color:#666;line-height:1.65;margin-bottom:24px;font-weight:300}
+.f-book-btn{display:block;width:100%;padding:14px;background:#1a3a8f;color:#e8e4f8;text-decoration:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:16px;font-weight:500;cursor:pointer;border:none;text-align:center;transition:background 0.2s}
+.f-book-btn:hover{background:#111d6e}
+.f-later{display:block;margin-top:12px;font-size:12px;color:#aaa;cursor:pointer;text-decoration:underline;background:none;border:none;width:100%;text-align:center}
+.f-next-steps{background:#f0f4fc;border-radius:10px;padding:16px 18px;margin-top:20px;text-align:left}
+.f-next-steps .ns-title{font-size:10px;color:#1a3a8f;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px}
+.f-next-steps ul{padding-left:16px}
+.f-next-steps li{font-size:12px;color:#2d3f7a;line-height:1.8;font-weight:300}
+
+/* ── DASHBOARD ── */
+.d-header{background:#1a3a8f;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.d-logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:#e8e4f8}
+.d-logo span{color:#7ea8e8}
+.d-sub{font-size:11px;color:#a8b8e0;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.d-date{font-size:12px;color:#a8b8e0}
+.stats-bar{background:white;border-bottom:1px solid #e0e4f0;padding:12px 20px;display:flex;gap:0;flex-wrap:wrap}
+.stat{flex:1;text-align:center;min-width:60px}
+.stat-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:#1a3a8f}
+.stat-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:1px}
+.stat-divider{width:1px;background:#e8eaf4}
+.today-bar{background:white;border-bottom:2px solid #e8eaf4;padding:14px 20px}
+.today-title{font-family:'Playfair Display',serif;font-size:14px;color:#1a3a8f;margin-bottom:10px;font-weight:600}
+.today-sections{display:flex;gap:14px;flex-wrap:wrap}
+.today-section{flex:1;min-width:160px}
+.today-section-label{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px}
+.today-section.overdue .today-section-label{color:#c0392b}
+.today-section.today .today-section-label{color:#b07800}
+.today-section.meetings .today-section-label{color:#1a3a8f}
+.today-pill{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:7px;margin-bottom:5px;font-size:12px;cursor:pointer}
+.today-pill.overdue{background:#fdf0f0;border:1px solid #f5c0c0;color:#a02020}
+.today-pill.today{background:#fff8e8;border:1px solid #f0d890;color:#8a5e00}
+.today-pill.meeting{background:#f0f4fc;border:1px solid #c0ccf0;color:#1a3a8f}
+.today-pill-name{font-weight:600}
+.today-pill-detail{font-size:10px;opacity:0.7}
+.today-empty{font-size:11px;color:#bbb;font-style:italic;padding:3px 0}
+.today-none{background:#f8f9ff;border-radius:8px;padding:10px 14px;text-align:center;font-size:12px;color:#aaa}
+.toolbar{padding:16px 20px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:180px;max-width:320px}
+.search-wrap input{width:100%;padding:9px 12px 9px 34px;border:1.5px solid #d8ddf0;border-radius:8px;font-family:'Source Sans 3',sans-serif;font-size:13px;color:#1a1a1a;background:white;transition:border-color 0.2s}
+.search-wrap input:focus{outline:none;border-color:#1a3a8f}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#aaa;font-size:14px;pointer-events:none}
+.add-btn{padding:9px 16px;background:#1a3a8f;color:#e8e4f8;border:none;border-radius:8px;font-family:'Source Sans 3',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background 0.2s;white-space:nowrap}
+.add-btn:hover{background:#111d6e}
+.pipeline-tabs{padding:14px 20px 0;display:flex;gap:6px;overflow-x:auto}
+.tab{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid transparent;white-space:nowrap;transition:all 0.2s}
+.tab.all{background:#1a3a8f;color:white}
+.tab.new{background:#f0f2fb;color:#1a3a8f;border-color:#c8d0f0}
+.tab.booked{background:#fff8e8;color:#b07800;border-color:#f0d890}
+.tab.review{background:#e8f0ff;color:#1a3a8f;border-color:#b8ccf8}
+.tab.enrolled{background:#e8f8ee;color:#1a6e3a;border-color:#90d8a8}
+.tab .count{display:inline-block;background:rgba(0,0,0,0.12);border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px}
+.lead-grid{padding:16px 20px 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.lead-card{background:white;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(26,58,143,0.07);border:1.5px solid #e8eaf4;transition:box-shadow 0.2s,transform 0.15s}
+.lead-card:hover{box-shadow:0 6px 20px rgba(26,58,143,0.13);transform:translateY(-2px)}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.card-avatar{width:38px;height:38px;border-radius:50%;background:#e8eaf4;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:#1a3a8f;flex-shrink:0}
+.card-name{font-family:'Playfair Display',serif;font-size:15px;font-weight:500;color:#1a1a2e;margin-left:10px}
+.card-school{font-size:11px;color:#888;margin-left:10px;margin-top:1px}
+.card-name-wrap{flex:1}
+.stage-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.stage-new{background:#f0f2fb;color:#1a3a8f}
+.stage-booked{background:#fff8e8;color:#b07800}
+.stage-review{background:#e8f0ff;color:#1a3a8f}
+.stage-enrolled{background:#e8f8ee;color:#1a6e3a}
+.card-divider{height:1px;background:#f0f2fb;margin:10px 0}
+.card-info{display:flex;flex-direction:column;gap:4px}
+.card-row{display:flex;align-items:center;gap:6px;font-size:12px;color:#555}
+.card-row .icon{font-size:12px;width:14px;text-align:center;flex-shrink:0}
+.card-bottom{margin-top:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.card-date{font-size:10px;color:#bbb}
+.card-actions{display:flex;gap:5px;flex-wrap:wrap}
+.action-btn{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid #d8ddf0;background:white;color:#555;transition:all 0.15s;font-family:'Source Sans 3',sans-serif}
+.action-btn:hover{border-color:#1a3a8f;color:#1a3a8f}
+.action-btn.primary{background:#1a3a8f;color:white;border-color:#1a3a8f}
+.action-btn.primary:hover{background:#111d6e}
+.doc-upload-zone{border:2px dashed #c8d0f0;border-radius:10px;padding:20px 16px;text-align:center;cursor:pointer;position:relative;transition:border-color 0.2s,background 0.2s}
+.doc-upload-zone:hover{border-color:#1a3a8f;background:#f8f9ff}
+.doc-upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.doc-upload-icon{font-size:28px;margin-bottom:6px}
+.doc-upload-text{font-size:13px;color:#1a3a8f;font-weight:600}
+.doc-upload-sub{font-size:11px;color:#aaa;margin-top:2px}
+.doc-card{background:white;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(26,58,143,0.07);border:1.5px solid #e8eaf4;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start}
+.doc-icon{width:48px;height:48px;border-radius:10px;background:#e8eaf4;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.doc-info{flex:1}
+.doc-name{font-family:'Playfair Display',serif;font-size:14px;font-weight:500;color:#1a1a2e;margin-bottom:3px}
+.doc-cat{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:7px;margin-bottom:4px}
+.doc-cat-403{background:#f0f2fb;color:#1a3a8f}
+.doc-cat-enroll{background:#e8f8ee;color:#1a6e3a}
+.doc-cat-life{background:#fdf0f0;color:#a02020}
+.doc-cat-trs{background:#fff8e8;color:#b07800}
+.doc-cat-flyer{background:#f3f0ff;color:#5b3bb5}
+.doc-desc{font-size:11px;color:#888;margin-bottom:6px}
+.doc-date{font-size:10px;color:#bbb}
+.doc-actions{display:flex;gap:6px;margin-top:8px}
+.doc-btn{padding:6px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:4px;transition:opacity 0.15s}
+.doc-btn:hover{opacity:0.85}
+.doc-btn.send{background:#1a3a8f;color:#e8e4f8}
+.doc-btn.del{background:#fdf0f0;color:#a02020}
+.doc-del{background:none;border:none;color:#ddd;cursor:pointer;font-size:16px;padding:0;flex-shrink:0}
+.doc-del:hover{color:#c0392b}
+.docs-empty{text-align:center;padding:40px 20px;color:#bbb;font-size:14px}
+.doc-sent-badge{background:#e8f8ee;color:#1a6e3a;font-size:10px;font-weight:600;padding:2px 7px;border-radius:7px;margin-left:6px}
+.school-card{background:white;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(26,58,143,0.07);border:1.5px solid #e8eaf4;margin-bottom:12px}
+.school-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.school-avatar{width:40px;height:40px;border-radius:10px;background:#e8eaf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.school-name{font-family:'Playfair Display',serif;font-size:15px;font-weight:500;color:#1a1a2e;margin-left:10px}
+.school-district{font-size:11px;color:#888;margin-left:10px;margin-top:1px}
+.school-name-wrap{flex:1}
+.school-actions{display:flex;gap:5px}
+.school-info{display:flex;flex-direction:column;gap:4px}
+.school-row{display:flex;align-items:center;gap:6px;font-size:12px;color:#555}
+.school-row .icon{font-size:12px;width:14px;text-align:center;flex-shrink:0}
+.school-divider{height:1px;background:#f0f2fb;margin:10px 0}
+.school-dates{display:flex;gap:10px;margin-top:8px}
+.school-date-pill{flex:1;padding:7px 10px;border-radius:8px;font-size:11px;text-align:center}
+.school-date-pill.last{background:#f0f4fc;color:#1a3a8f}
+.school-date-pill.next{background:#e8f8ee;color:#1a6e3a}
+.school-date-pill.overdue{background:#fdf0f0;color:#a02020}
+.school-date-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px}
+.school-date-val{font-weight:600}
+.school-contact-actions{display:flex;gap:6px;margin-top:10px}
+.schools-empty{text-align:center;padding:40px 20px;color:#bbb;font-size:14px}
+.r-upload-zone{border:2px dashed #c8d0f0;border-radius:10px;padding:20px 16px;text-align:center;cursor:pointer;position:relative;transition:border-color 0.2s,background 0.2s}
+.r-upload-zone:hover{border-color:#1a3a8f;background:#f8f9ff}
+.r-upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.r-upload-icon{font-size:28px;margin-bottom:6px}
+.r-upload-text{font-size:13px;color:#1a3a8f;font-weight:600}
+.r-upload-sub{font-size:11px;color:#aaa;margin-top:2px}
+.r-filter{padding:6px 14px;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid #c8d0f0;background:#f0f2fb;color:#1a3a8f;white-space:nowrap;transition:all 0.2s}
+.r-filter.active{background:#1a3a8f;color:white;border-color:#1a3a8f}
+.receipt-card{background:white;border-radius:10px;padding:14px 16px;box-shadow:0 2px 6px rgba(26,58,143,0.07);border:1.5px solid #e8eaf4;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+.receipt-thumb{width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#f0f2fb;display:flex;align-items:center;justify-content:center;font-size:22px}
+.receipt-thumb img{width:100%;height:100%;border-radius:8px;object-fit:cover}
+.receipt-info{flex:1}
+.receipt-amount{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:#1a3a8f}
+.receipt-cat{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;margin-left:8px}
+.cat-meals{background:#fdf0f0;color:#a02020}
+.cat-travel{background:#f0f2fb;color:#1a3a8f}
+.cat-office{background:#fff8e8;color:#b07800}
+.cat-marketing{background:#e8f8ee;color:#1a6e3a}
+.cat-professional{background:#f3f0ff;color:#5b3bb5}
+.receipt-desc{font-size:12px;color:#555;margin-top:3px}
+.receipt-date{font-size:10px;color:#bbb;margin-top:3px}
+.receipt-delete{background:none;border:none;color:#ddd;cursor:pointer;font-size:16px;padding:0;line-height:1;flex-shrink:0}
+.receipt-delete:hover{color:#c0392b}
+.receipts-empty{text-align:center;padding:40px 20px;color:#bbb;font-size:14px}
+.no-results{text-align:center;padding:50px;color:#bbb;grid-column:1/-1;font-size:14px}
+.card-tabs{display:flex;border-bottom:1px solid #e8eaf4;margin:10px -18px 0;padding:0 18px}
+.card-tab{padding:7px 12px;font-size:11px;font-weight:600;color:#aaa;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s}
+.card-tab.active{color:#1a3a8f;border-bottom-color:#1a3a8f}
+.card-tab-body{display:none;padding:10px 0 0}
+.card-tab-body.active{display:block}
+.notes-list{margin-bottom:8px}
+.no-notes{font-size:11px;color:#bbb;font-style:italic;padding:4px 0}
+.card-info-wrap{padding-top:10px}
+.card-notes-wrap{padding-top:10px;display:none}
+.note-item{background:#f0f4fc;border-radius:7px;padding:8px 10px;margin-bottom:6px}
+.note-item-text{font-size:11px;color:#333;line-height:1.5}
+.note-item-date{font-size:10px;color:#aaa;margin-top:3px}
+.note-textarea{width:100%;border:1.5px solid #e0dbd0;border-radius:8px;padding:8px 10px;font-family:'Source Sans 3',sans-serif;font-size:12px;color:#555;background:#fafaf7;resize:none;height:70px;line-height:1.5;margin-top:8px}
+.note-textarea:focus{outline:none;border-color:#1a3a8f;background:white}
+.save-note-btn{width:100%;padding:7px;background:#1a3a8f;color:#e8e4f8;border:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;margin-top:6px}
+.save-note-btn:hover{background:#111d6e}
+.no-notes{font-size:11px;color:#bbb;font-style:italic;padding:4px 0}
+.contact-actions{display:flex;gap:6px;margin-top:10px}
+.contact-action{flex:1;padding:8px 6px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none;transition:opacity 0.15s}
+.contact-action:hover{opacity:0.85}
+.contact-action.call{background:#e8f0ff;color:#1a3a8f}
+.contact-action.text{background:#e8f8ee;color:#1a6e3a}
+.contact-action.email{background:#fff8e8;color:#b07800}
+.loading{text-align:center;padding:50px;color:#aaa;grid-column:1/-1}
+.loading-spinner{width:36px;height:36px;border:3px solid #e8eaf4;border-top-color:#1a3a8f;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(10,20,80,0.35);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:white;border-radius:16px;padding:26px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(10,20,80,0.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-title{font-family:'Playfair Display',serif;font-size:19px;color:#1a1a2e}
+.modal-close{background:none;border:none;font-size:22px;color:#aaa;cursor:pointer;line-height:1}
+.modal-close:hover{color:#333}
+.modal-field{margin-bottom:12px}
+.modal-field label{display:block;font-size:11px;font-weight:600;color:#555;margin-bottom:4px}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:9px 12px;border:1.5px solid #e0e4f0;border-radius:8px;font-family:'Source Sans 3',sans-serif;font-size:13px;color:#1a1a1a;background:#fafafa}
+.modal-field input:focus,.modal-field select:focus,.modal-field textarea:focus{outline:none;border-color:#1a3a8f}
+.modal-field textarea{min-height:60px;resize:vertical}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-footer{display:flex;gap:8px;margin-top:18px}
+.modal-save{flex:1;padding:11px;background:#1a3a8f;color:#e8e4f8;border:none;border-radius:8px;font-family:'Playfair Display',serif;font-size:14px;cursor:pointer;transition:background 0.2s}
+.modal-save:hover{background:#111d6e}
+.modal-save:disabled{background:#888;cursor:not-allowed}
+.modal-cancel{padding:11px 18px;background:white;color:#888;border:1.5px solid #e0e4f0;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Source Sans 3',sans-serif}
+.modal-cancel:hover{border-color:#aaa}
+
+/* ── SCANNER ── */
+.sc-body{max-width:480px;margin:0 auto;padding:20px 20px 40px}
+.sc-card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(26,58,143,0.07);margin-bottom:12px;display:none}
+.sc-card.active{display:block}
+.sc-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:#1a3a8f;color:white;border-radius:50%;font-size:11px;font-weight:600;margin-bottom:8px}
+.sc-title{font-family:'Playfair Display',serif;font-size:17px;color:#1a1a2e;margin-bottom:4px}
+.sc-sub{font-size:12px;color:#888;margin-bottom:14px;line-height:1.5}
+.upload-zone{border:2px dashed #c8d0f0;border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;position:relative;transition:border-color 0.2s,background 0.2s}
+.upload-zone:hover{border-color:#1a3a8f;background:#f8f9ff}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.u-icon{font-size:32px;margin-bottom:8px}
+.u-text{font-size:13px;color:#1a3a8f;font-weight:600}
+.u-sub{font-size:11px;color:#aaa;margin-top:3px}
+.preview-img{width:100%;border-radius:8px;margin-top:14px;max-height:280px;object-fit:contain;display:none}
+.sc-btn{width:100%;padding:13px;border:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:15px;font-weight:500;cursor:pointer;margin-top:10px;transition:background 0.2s}
+.sc-btn.primary{background:#1a3a8f;color:#e8e4f8}
+.sc-btn.primary:hover{background:#111d6e}
+.sc-btn.primary:disabled{background:#888;cursor:not-allowed}
+.sc-btn.secondary{background:white;color:#1a3a8f;border:1.5px solid #1a3a8f;font-family:'Source Sans 3',sans-serif;font-size:13px}
+.scanning{text-align:center;padding:32px 20px}
+.scan-spinner{width:44px;height:44px;border:3px solid #e8eaf4;border-top-color:#1a3a8f;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 14px}
+.scan-text{font-size:14px;color:#555;font-weight:500}
+.scan-sub{font-size:11px;color:#aaa;margin-top:5px}
+.sc-field{margin-bottom:10px}
+.sc-field label{font-size:10px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:3px}
+.sc-field input,.sc-field select{width:100%;padding:9px 11px;border:1.5px solid #1a3a8f;border-radius:7px;font-family:'Source Sans 3',sans-serif;font-size:13px;color:#1a1a1a;background:#f0f4fc}
+.sc-field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.conf-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:10px;margin-bottom:12px}
+.conf-badge.high{background:#e8f8ee;color:#1a6e3a}
+.conf-badge.medium{background:#fff8e8;color:#b07800}
+.conf-badge.low{background:#fdf0f0;color:#a02020}
+.sc-success{text-align:center;padding:16px 0}
+.sc-check{width:56px;height:56px;background:#1a3a8f;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.sc-check svg{width:26px;height:26px}
+.sc-success h2{font-family:'Playfair Display',serif;font-size:20px;color:#1a3a8f;margin-bottom:8px}
+.sc-success p{font-size:12px;color:#666;line-height:1.6;margin-bottom:16px}
+.sc-preview{background:#f0f4fc;border-radius:9px;padding:12px 14px;text-align:left;margin-bottom:14px}
+.sc-preview-name{font-family:'Playfair Display',serif;font-size:14px;color:#1a1a2e;margin-bottom:5px}
+.sc-preview-row{font-size:11px;color:#555;padding:2px 0}
+.back-btn{display:flex;align-items:center;gap:5px;font-size:12px;color:#1a3a8f;cursor:pointer;margin-bottom:14px;background:none;border:none;padding:0;font-family:'Source Sans 3',sans-serif}
+.back-btn:hover{text-decoration:underline}
+.error-box{background:#fdf0f0;border:1px solid #f5c0c0;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:#a02020;display:none}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ VIEW: FORM ═══════════ -->
+<div class="view active" id="view-form">
+  <div class="header">
+    <div class="logo">Retire<span>Ready</span></div>
+    <div class="tagline">Your retirement. Simplified.</div>
+  </div>
+  <div class="f-body">
+    <div class="f-intro" id="f-intro">
+      <p>Take <strong>2 minutes</strong> to share your info and we'll schedule a free, personalized retirement review — built specifically for educators like you.</p>
+    </div>
+    <div class="f-card" id="f-form-wrap">
+      <div class="f-section">Personal info</div>
+      <div class="f-field"><label>Full name *</label><input type="text" id="f-name" placeholder="Jane Smith"></div>
+      <div class="f-row">
+        <div class="f-field"><label>Email *</label><input type="email" id="f-email" placeholder="jane@school.edu"></div>
+        <div class="f-field"><label>Phone *</label><input type="tel" id="f-phone" placeholder="(404) 555-0100"></div>
+      </div>
+      <div class="f-field">
+        <label>Best way to contact you *</label>
+        <div class="contact-options">
+          <label><input type="radio" name="f-contact" value="Phone call"> Phone call</label>
+          <label><input type="radio" name="f-contact" value="Text message"> Text message</label>
+          <label><input type="radio" name="f-contact" value="Email"> Email</label>
+        </div>
+      </div>
+      <div class="f-section">School info</div>
+      <div class="f-field"><label>School name *</label><input type="text" id="f-school" placeholder="Lincoln Elementary"></div>
+      <div class="f-field"><label>District *</label><input type="text" id="f-district" placeholder="Atlanta Public Schools"></div>
+      <div class="f-section">Retirement details</div>
+      <div class="f-field"><label>Current 403(b)/457 retirement plan</label>
+        <select id="f-provider">
+          <option value="">Select provider...</option>
+          <option>AXA / Equitable</option><option>Lincoln Investment</option><option>Voya Financial</option>
+          <option>Aspire Financial Services</option><option>Security Benefit</option><option>TIAA</option>
+          <option>Fidelity</option><option>Nationwide</option><option>MissionSquare (ICMA-RC)</option>
+          <option>457(b) plan</option><option>Both 403(b) and 457</option><option>Not sure</option>
+          <option>I don't have one yet</option>
+        </select>
+      </div>
+      <div class="f-field">
+        <label>I need help with... <span style="font-weight:300;color:#999">(select all that apply)</span></label>
+        <div class="check-options">
+          <label class="check-item"><input type="checkbox" name="f-needs" value="Set up new 403(b)"> Set up new 403(b)</label>
+          <label class="check-item"><input type="checkbox" name="f-needs" value="Review current 403(b)/457 retirement plan"> Review current 403(b)/457 retirement plan</label>
+          <label class="check-item"><input type="checkbox" name="f-needs" value="Life insurance info"> Life insurance info</label>
+          <label class="check-item"><input type="checkbox" name="f-needs" value="Rollover/transfer info"> Rollover/transfer info (former employer, old plan, etc.)</label>
+        </div>
+      </div>
+      <div class="f-field">
+        <label>Years in TRS <span style="font-weight:300;color:#999">(select all that apply)</span></label>
+        <div class="check-options">
+          <label class="check-item"><input type="checkbox" name="f-years" value="0-2 years"> 0-2 years</label>
+          <label class="check-item"><input type="checkbox" name="f-years" value="3-5 years"> 3-5 years</label>
+          <label class="check-item"><input type="checkbox" name="f-years" value="6-10 years"> 6-10 years</label>
+          <label class="check-item"><input type="checkbox" name="f-years" value="11-20 years"> 11-20 years</label>
+          <label class="check-item"><input type="checkbox" name="f-years" value="20+ years"> 20+ years</label>
+        </div>
+      </div>
+      <div class="f-section">How did you hear about us?</div>
+      <div class="f-field">
+        <label>Event or school where you met us</label>
+        <input type="text" id="f-source" placeholder="e.g. Lincoln Elementary Teacher Breakfast">
+      </div>
+      <div class="f-section">Anything else we should know?</div>
+      <div class="f-field"><label>Notes, questions, or concerns</label><textarea id="f-notes" placeholder="e.g. I'm close to retirement and want to know my options..."></textarea></div>
+      <button class="f-submit" id="f-submit-btn" onclick="submitForm()">Submit &amp; Book My Retirement Review</button>
+      <p class="f-privacy">Your information is private and will only be used to prepare your retirement review.</p>
+    </div>
+    <div class="f-success" id="f-success">
+      <div class="f-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="#e8e4f8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+      <h2>You're all set!</h2>
+      <p>Thanks for submitting. The next step is to schedule your <strong>free retirement review</strong> — a quick 30-minute Zoom call at a time that works for you.</p>
+      <button class="f-book-btn" onclick="window.open('https://calendly.com/jessicagoss-summitlifegroup/30min','_blank')">Book My Free 30-Min Zoom Review</button>
+      <button class="f-later" id="f-later" onclick="laterMsg()">I'll schedule later</button>
+      <div class="f-next-steps">
+        <div class="ns-title">What to expect</div>
+        <ul>
+          <li>30-minute Zoom call, no pressure</li>
+          <li>Review your current 403(b) plan</li>
+          <li>Personalized retirement roadmap</li>
+          <li>Answers to all your questions</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ VIEW: DASHBOARD ═══════════ -->
+<div class="view" id="view-dashboard">
+  <div class="d-nav">
+    <button class="d-nav-btn active" onclick="showDashTab('leads')">📊 Leads</button>
+    <button class="d-nav-btn" onclick="showDashTab('scanner')">📷 Scan Card</button>
+    <button class="d-nav-btn" onclick="showDashTab('receipts')">🧾 Receipts</button>
+    <button class="d-nav-btn" onclick="showDashTab('schools')">🏫 Schools</button>
+    <button class="d-nav-btn" onclick="showDashTab('docs')">📁 Docs</button>
+    <button class="d-nav-btn" onclick="showDashTab('milestones')">🎂 Milestones</button>
+    <button class="d-nav-btn" onclick="showDashTab('analytics')">📈 Analytics</button>
+  </div>
+
+  <!-- LEADS TAB -->
+  <div id="dash-leads">
+    <div class="d-header">
+      <div><div class="d-logo">Retire<span>Ready</span></div><div class="d-sub">Lead Dashboard</div></div>
+      <div class="d-date" id="todays-date"></div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="stat-new">0</div><div class="stat-label">New</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="stat-booked">0</div><div class="stat-label">Booked</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="stat-review">0</div><div class="stat-label">Review</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="stat-enrolled">0</div><div class="stat-label">Enrolled</div></div>
+    </div>
+    <div class="today-bar" id="today-bar"></div>
+    <div class="toolbar">
+      <div class="search-wrap"><span class="search-icon">&#9906;</span><input type="text" id="search-input" placeholder="Search by name..." oninput="renderLeads()"></div>
+      <button class="add-btn" onclick="openAddModal()">+ Add Lead</button>
+    </div>
+    <div class="pipeline-tabs">
+      <div class="tab all" onclick="setStage('all')">All <span class="count" id="count-all">0</span></div>
+      <div class="tab new" onclick="setStage('New lead')">New Lead <span class="count" id="count-new">0</span></div>
+      <div class="tab booked" onclick="setStage('Meeting booked')">Meeting Booked <span class="count" id="count-booked">0</span></div>
+      <div class="tab review" onclick="setStage('In review')">In Review <span class="count" id="count-review">0</span></div>
+      <div class="tab enrolled" onclick="setStage('Enrolled')">Enrolled <span class="count" id="count-enrolled">0</span></div>
+    </div>
+    <div class="lead-grid" id="lead-grid"></div>
+  </div>
+
+  <!-- SCANNER TAB -->
+  <div id="dash-scanner" style="display:none">
+    <div class="d-header">
+      <div><div class="d-logo">Retire<span>Ready</span></div><div class="d-sub">Report Card Scanner</div></div>
+    </div>
+    <div class="sc-body">
+      <!-- Upload -->
+      <div class="sc-card active" id="sc-upload">
+        <div class="sc-num">1</div>
+        <div class="sc-title">Take or upload a photo</div>
+        <div class="sc-sub">Point your camera at a paper report card. The AI will read it and fill in all the fields automatically.</div>
+        <div class="upload-zone">
+          <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+          <div class="u-icon">📷</div>
+          <div class="u-text">Tap to take a photo or upload</div>
+          <div class="u-sub">Works with handwritten or printed cards</div>
+        </div>
+        <img id="preview-img" class="preview-img">
+        <div class="error-box" id="upload-error">Could not read the image. Please try again with a clearer photo.</div>
+        <button class="sc-btn primary" id="scan-btn" onclick="startScan()" style="display:none">Scan This Card</button>
+      </div>
+      <!-- Scanning -->
+      <div class="sc-card" id="sc-scanning">
+        <div class="scanning">
+          <div class="scan-spinner"></div>
+          <div class="scan-text">Reading report card...</div>
+          <div class="scan-sub">The AI is extracting the information — this takes about 10 seconds</div>
+        </div>
+      </div>
+      <!-- Results -->
+      <div class="sc-card" id="sc-results">
+        <button class="back-btn" onclick="resetScanner()">&#8592; Scan another card</button>
+        <div class="sc-num">2</div>
+        <div class="sc-title">Review extracted info</div>
+        <div class="sc-sub">Fields in blue were detected by the AI. Review and correct before saving.</div>
+        <div id="conf-badge"></div>
+        <div class="error-box" id="scan-error"></div>
+        <div class="sc-field-row">
+          <div class="sc-field"><label>Full name</label><input type="text" id="r-name" placeholder="Not detected"></div>
+          <div class="sc-field"><label>Phone</label><input type="tel" id="r-phone" placeholder="Not detected"></div>
+        </div>
+        <div class="sc-field"><label>Email</label><input type="email" id="r-email" placeholder="Not detected"></div>
+        <div class="sc-field-row">
+          <div class="sc-field"><label>School</label><input type="text" id="r-school" placeholder="Not detected"></div>
+          <div class="sc-field"><label>District</label><input type="text" id="r-district" placeholder="Not detected"></div>
+        </div>
+        <div class="sc-field"><label>Provider</label><input type="text" id="r-provider" placeholder="Not detected"></div>
+        <div class="sc-field"><label>Years in TRS</label>
+          <select id="r-trs"><option value="">Not detected</option><option>0-2 years</option><option>3-5 years</option><option>6-10 years</option><option>11-20 years</option><option>20+ years</option></select>
+        </div>
+        <div class="sc-field"><label>Needs help with</label><input type="text" id="r-needs" placeholder="Not detected"></div>
+        <div class="sc-field"><label>Notes</label><input type="text" id="r-notes" placeholder="Not detected"></div>
+        <button class="sc-btn primary" id="sc-save-btn" onclick="saveScanLead()" style="margin-top:14px">Save Lead to Dashboard</button>
+        <button class="sc-btn secondary" onclick="resetScanner()">Scan Again</button>
+      </div>
+      <!-- Success -->
+      <div class="sc-card" id="sc-success">
+        <div class="sc-success">
+          <div class="sc-check"><svg viewBox="0 0 24 24" fill="none" stroke="#e8e4f8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+          <h2>Lead saved!</h2>
+          <p>The lead has been added to your dashboard as a new lead.</p>
+          <div class="sc-preview" id="sc-preview"></div>
+          <button class="sc-btn primary" onclick="resetScanner()">Scan Another Card</button>
+          <button class="sc-btn secondary" onclick="showDashTab('leads')">Go to Dashboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- RECEIPTS TAB -->
+  <div id="dash-receipts" style="display:none">
+    <div class="d-header">
+      <div><div class="d-logo">Retire<span>Ready</span></div><div class="d-sub">Receipt Tracker</div></div>
+    </div>
+    <!-- Receipt Stats -->
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-num" id="r-total">$0</div><div class="stat-label">Total</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="r-meals">$0</div><div class="stat-label">Meals</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="r-travel">$0</div><div class="stat-label">Travel</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="r-other">$0</div><div class="stat-label">Other</div></div>
+    </div>
+    <!-- Add Receipt -->
+    <div style="padding:16px 20px 0">
+      <div style="background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(26,58,143,0.07);margin-bottom:16px">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;color:#1a1a2e;margin-bottom:14px">Add Receipt</div>
+        <!-- Photo upload -->
+        <div class="r-upload-zone" id="r-upload-zone">
+          <input type="file" id="r-photo" accept="image/*" capture="environment" onchange="handleReceiptPhoto(this)">
+          <div class="r-upload-icon">📷</div>
+          <div class="r-upload-text">Tap to photograph receipt</div>
+          <div class="r-upload-sub">Optional — snap or upload</div>
+        </div>
+        <img id="r-preview" style="display:none;width:100%;border-radius:8px;margin-top:10px;max-height:200px;object-fit:contain">
+        <!-- Fields -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+          <div class="modal-field">
+            <label>Amount *</label>
+            <input type="number" id="r-amount" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div class="modal-field">
+            <label>Date *</label>
+            <input type="date" id="r-date">
+          </div>
+        </div>
+        <div class="modal-field" style="margin-top:10px">
+          <label>Category *</label>
+          <select id="r-category">
+            <option value="">Select category...</option>
+            <option value="Meals & Entertainment">Meals &amp; Entertainment</option>
+            <option value="Mileage & Travel">Mileage &amp; Travel</option>
+            <option value="Office Supplies">Office Supplies</option>
+            <option value="Marketing & Printing">Marketing &amp; Printing</option>
+            <option value="Professional Fees & Licensing">Professional Fees &amp; Licensing</option>
+          </select>
+        </div>
+        <div class="modal-field" style="margin-top:10px">
+          <label>Description</label>
+          <input type="text" id="r-desc" placeholder="e.g. Teacher breakfast at Lincoln Elementary">
+        </div>
+        <button class="add-btn" onclick="addReceipt()" style="width:100%;margin-top:14px;padding:12px;font-size:14px">+ Add Receipt</button>
+      </div>
+      <!-- Filter -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto">
+        <div class="r-filter active" onclick="filterReceipts('all',this)">All</div>
+        <div class="r-filter" onclick="filterReceipts('Meals & Entertainment',this)">Meals</div>
+        <div class="r-filter" onclick="filterReceipts('Mileage & Travel',this)">Travel</div>
+        <div class="r-filter" onclick="filterReceipts('Office Supplies',this)">Office</div>
+        <div class="r-filter" onclick="filterReceipts('Marketing & Printing',this)">Marketing</div>
+        <div class="r-filter" onclick="filterReceipts('Professional Fees & Licensing',this)">Prof. Fees</div>
+      </div>
+      <!-- Receipt list -->
+      <div id="receipt-list"></div>
+    </div>
+  </div>
+
+  <!-- SCHOOLS TAB -->
+  <div id="dash-schools" style="display:none">
+    <div class="d-header">
+      <div><div class="d-logo">Retire<span>Ready</span></div><div class="d-sub">School Directory</div></div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-num" id="sch-total">0</div><div class="stat-label">Schools</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="sch-visited">0</div><div class="stat-label">Visited</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="sch-upcoming">0</div><div class="stat-label">Upcoming</div></div>
+    </div>
+    <div style="padding:16px 20px 40px">
+      <!-- Add School -->
+      <div style="background:white;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(26,58,143,0.07);margin-bottom:16px">
+        <div style="font-family:'Playfair Display',serif;font-size:15px;color:#1a1a2e;margin-bottom:14px">Add School</div>
+        <div class="modal-row">
+          <div class="modal-field"><label>School name *</label><input type="text" id="sch-name" placeholder="Lincoln Elementary"></div>
+          <div class="modal-field"><label>District *</label><input type="text" id="sch-district" placeholder="Atlanta Public Schools"></div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Principal / Contact</label><input type="text" id="sch-contact" placeholder="Dr. Smith"></div>
+          <div class="modal-field"><label>Phone</label><input type="tel" id="sch-phone" placeholder="(404) 555-0100"></div>
+        </div>
+        <div class="modal-field"><label>Address</label><input type="text" id="sch-address" placeholder="123 Main St, Atlanta, GA 30301"></div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Last visit date</label><input type="date" id="sch-last"></div>
+          <div class="modal-field"><label>Next visit date</label><input type="date" id="sch-next"></div>
+        </div>
+        <div class="modal-field"><label>Notes</label><textarea id="sch-notes" style="min-height:60px;resize:vertical" placeholder="e.g. Best time to visit is 7-8am before first bell"></textarea></div>
+        <button class="add-btn" onclick="addSchool()" style="width:100%;margin-top:10px;padding:12px;font-size:14px">+ Add School</button>
+      </div>
+      <!-- Search -->
+      <div class="toolbar" style="padding:0 0 14px">
+        <div class="search-wrap" style="max-width:100%">
+          <span class="search-icon">&#9906;</span>
+          <input type="text" id="sch-search" placeholder="Search schools..." oninput="renderSchools()" style="width:100%">
+        </div>
+      </div>
+      <!-- School list -->
+      <div id="school-list"></div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS TAB -->
+  <div id="dash-docs" style="display:none">
+    <div class="d-header">
+      <div><div class="d-logo">Retire<span>Ready</span></div><div class="d-sub">Document Library</div></div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-num" id="doc-total">0</div><div class="stat-label">Documents</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num" id="doc-sent">0</div><div class="stat-label">Sent</div></div>
+    </div>
+    <div style="padding:16px 20px 40px">
+      <!-- Upload Doc -->
+      <div style="background:white;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(26,58,143,0.07);margin-bottom:16px">
+        <div style="font-family:'Playfair Display',serif;font-size:15px;color:#1a1a2e;margin-bottom:14px">Add Document</div>
+        <div class="doc-upload-zone" id="doc-upload-zone">
+          <input type="file" id="doc-file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onchange="handleDocUpload(this)">
+          <div class="doc-upload-icon">📄</div>
+          <div class="doc-upload-text">Tap to upload document</div>
+          <div class="doc-upload-sub">PDF, Word, or image files</div>
+        </div>
+        <div id="doc-file-name" style="display:none;background:#f0f4fc;border-radius:8px;padding:8px 12px;margin-top:10px;font-size:12px;color:#1a3a8f;font-weight:500"></div>
+        <div class="modal-field" style="margin-top:12px">
+          <label>Document name *</label>
+          <input type="text" id="doc-name" placeholder="e.g. 403(b) Plan Comparison 2026">
+        </div>
+        <div class="modal-field" style="margin-top:10px">
+          <label>Category *</label>
+          <select id="doc-category">
+            <option value="">Select category...</option>
+            <option value="403(b) Plan Comparison">403(b) Plan Comparison</option>
+            <option value="Enrollment Form">Enrollment Form</option>
+            <option value="Life Insurance Info">Life Insurance Info</option>
+            <option value="TRS Benefit Summary">TRS Benefit Summary</option>
+            <option value="Custom Flyer">Custom Flyer</option>
+          </select>
+        </div>
+        <div class="modal-field" style="margin-top:10px">
+          <label>Description</label>
+          <input type="text" id="doc-desc" placeholder="e.g. Comparison of top 3 403(b) providers">
+        </div>
+        <button class="add-btn" onclick="addDocument()" style="width:100%;margin-top:12px;padding:12px;font-size:14px">+ Add Document</button>
+      </div>
+
+      <!-- Category filters -->
+      <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;flex-wrap:nowrap">
+        <div class="r-filter active" onclick="filterDocs('all',this)">All</div>
+        <div class="r-filter" onclick="filterDocs('403(b) Plan Comparison',this)">403(b)</div>
+        <div class="r-filter" onclick="filterDocs('Enrollment Form',this)">Enrollment</div>
+        <div class="r-filter" onclick="filterDocs('Life Insurance Info',this)">Life Ins.</div>
+        <div class="r-filter" onclick="filterDocs('TRS Benefit Summary',this)">TRS</div>
+        <div class="r-filter" onclick="filterDocs('Custom Flyer',this)">Flyers</div>
+      </div>
+
+      <!-- Doc list -->
+      <div id="doc-list"></div>
+    </div>
+
+    <!-- Send Email Modal -->
+    <div class="modal-bg" id="send-modal-bg">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">Send Document</div>
+          <button class="modal-close" onclick="closeSendModal()">&#215;</button>
+        </div>
+        <div style="background:#f0f4fc;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#1a3a8f;font-weight:500" id="send-doc-name"></div>
+        <div class="modal-field">
+          <label>Send to (email) *</label>
+          <input type="email" id="send-email" placeholder="teacher@school.edu">
+        </div>
+        <div class="modal-field" style="margin-top:10px">
+          <label>Or select a lead</label>
+          <select id="send-lead-select" onchange="fillLeadEmail()">
+            <option value="">Choose from your leads...</option>
+          </select>
+        </div>
+        <div class="modal-field" style="margin-top:10px">
+          <label>Subject</label>
+          <input type="text" id="send-subject" placeholder="Retirement Planning Resources">
+        </div>
+        <div class="modal-field" style="margin-top:10px">
+          <label>Message</label>
+          <textarea id="send-message" style="min-height:80px;resize:vertical" placeholder="Hi, I wanted to share this document with you..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-cancel" onclick="closeSendModal()">Cancel</button>
+          <button class="modal-save" onclick="sendDocument()">Send via Email</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MILESTONES TAB -->
+  <div id="dash-milestones" style="display:none">
+    <div class="d-header">
+      <div><div class="d-logo">Retire<span>Ready</span></div><div class="d-sub">Birthdays &amp; TRS Milestones</div></div>
+    </div>
+    <div style="padding:16px 20px 40px">
+      <div style="background:#f0f4fc;border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#1a3a8f;line-height:1.6">
+        <strong>How to use:</strong> Add birthdays and TRS start dates when editing a lead. This page shows everyone with an upcoming birthday or TRS anniversary in the next 30 days — perfect for timely outreach!
+      </div>
+      <div id="milestones-upcoming"></div>
+      <div style="margin-top:20px">
+        <div style="font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#1a3a8f;margin-bottom:12px">All leads with milestone dates</div>
+        <div id="milestones-all"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS TAB -->
+  <div id="dash-analytics" style="display:none">
+    <div class="d-header">
+      <div><div class="d-logo">Retire<span>Ready</span></div><div class="d-sub">Lead Source Analytics</div></div>
+    </div>
+    <div style="padding:16px 20px 40px">
+      <div id="analytics-content"></div>
+    </div>
+  </div>
+
+<!-- ═══════════ MODAL ═══════════ -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="modal-title">Add New Lead</div><button class="modal-close" onclick="closeModal()">&#215;</button></div>
+    <div class="modal-row">
+      <div class="modal-field"><label>Full name *</label><input type="text" id="m-name" placeholder="Jane Smith"></div>
+      <div class="modal-field"><label>Phone *</label><input type="tel" id="m-phone" placeholder="(404) 555-0100"></div>
+    </div>
+    <div class="modal-field"><label>Email *</label><input type="email" id="m-email" placeholder="jane@school.edu"></div>
+    <div class="modal-row">
+      <div class="modal-field"><label>School</label><input type="text" id="m-school"></div>
+      <div class="modal-field"><label>District</label><input type="text" id="m-district"></div>
+    </div>
+    <div class="modal-field"><label>Pipeline stage</label>
+      <select id="m-stage"><option value="New lead">New lead</option><option value="Meeting booked">Meeting booked</option><option value="In review">In review</option><option value="Enrolled">Enrolled</option></select>
+    </div>
+    <div class="modal-field"><label>Best way to reach them</label>
+      <select id="m-contact"><option value="">Not specified</option><option value="Phone call">Phone call</option><option value="Text message">Text message</option><option value="Email">Email</option></select>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field"><label>Years in TRS</label>
+        <select id="m-trs"><option value="">Select...</option><option>0-2 years</option><option>3-5 years</option><option>6-10 years</option><option>11-20 years</option><option>20+ years</option></select>
+      </div>
+      <div class="modal-field"><label>Follow-up date</label><input type="date" id="m-followup"></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field"><label>Birthday</label><input type="date" id="m-birthday"></div>
+      <div class="modal-field"><label>TRS start date</label><input type="date" id="m-trsdate"></div>
+    </div>
+    <div class="modal-field"><label>Lead source</label><input type="text" id="m-source" placeholder="e.g. Lincoln Elementary Breakfast"></div>
+    <div class="modal-field"><label>Needs help with</label><input type="text" id="m-needs" placeholder="e.g. Set up new 403(b)"></div>
+    <div class="modal-field"><label>Notes</label><textarea id="m-notes"></textarea></div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" id="modal-save-btn" onclick="saveLead()">Save Lead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE SETUP ──
+const SUPABASE_URL = 'https://kbwuwrfrnjruslkackzv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_7VVQHQqRVecVYcv1syQQHg_P8oAaUdw';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const CALENDLY = 'https://calendly.com/jessicagoss-summitlifegroup/30min';
+
+var leads = [];
+var currentStage = 'all';
+var editingId = null;
+var photoBase64 = null;
+
+// ── ROUTING ──
+function getView() { return window.location.hash === '#dashboard' ? 'dashboard' : 'form'; }
+function showView(v) {
+  document.getElementById('view-form').className = 'view' + (v==='form' ? ' active' : '');
+  document.getElementById('view-dashboard').className = 'view' + (v==='dashboard' ? ' active' : '');
+  if (v === 'dashboard') { initDashboard(); }
+}
+window.addEventListener('hashchange', function(){ showView(getView()); });
+showView(getView());
+
+function showDashTab(tab) {
+  document.getElementById('dash-leads').style.display = tab==='leads' ? 'block' : 'none';
+  document.getElementById('dash-scanner').style.display = tab==='scanner' ? 'block' : 'none';
+  document.getElementById('dash-receipts').style.display = tab==='receipts' ? 'block' : 'none';
+  document.getElementById('dash-schools').style.display = tab==='schools' ? 'block' : 'none';
+  document.getElementById('dash-docs').style.display = tab==='docs' ? 'block' : 'none';
+  document.getElementById('dash-milestones').style.display = tab==='milestones' ? 'block' : 'none';
+  document.getElementById('dash-analytics').style.display = tab==='analytics' ? 'block' : 'none';
+  var btns = document.querySelectorAll('.d-nav-btn');
+  btns[0].className = 'd-nav-btn' + (tab==='leads' ? ' active' : '');
+  btns[1].className = 'd-nav-btn' + (tab==='scanner' ? ' active' : '');
+  btns[2].className = 'd-nav-btn' + (tab==='receipts' ? ' active' : '');
+  btns[3].className = 'd-nav-btn' + (tab==='schools' ? ' active' : '');
+  btns[4].className = 'd-nav-btn' + (tab==='docs' ? ' active' : '');
+  btns[5].className = 'd-nav-btn' + (tab==='milestones' ? ' active' : '');
+  btns[6].className = 'd-nav-btn' + (tab==='analytics' ? ' active' : '');
+  if (tab==='receipts') renderReceipts('all');
+  if (tab==='schools') renderSchools();
+  if (tab==='docs') renderDocs('all');
+  if (tab==='milestones') renderMilestones();
+  if (tab==='analytics') renderAnalytics();
+}
+
+function initDashboard() {
+  document.getElementById('todays-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  loadLeads();
+}
+
+// ── FORM ──
+async function submitForm() {
+  var required = ['f-name','f-email','f-phone','f-school','f-district'];
+  var valid = true;
+  required.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el.value.trim()) { el.style.borderColor='#c0392b'; valid=false; }
+    else el.style.borderColor='#e0dbd0';
+  });
+  var contact = document.querySelector('input[name="f-contact"]:checked');
+  if (!contact) { document.querySelector('.contact-options').style.outline='2px solid #c0392b'; valid=false; }
+  else document.querySelector('.contact-options').style.outline='none';
+  if (!valid) { alert('Please fill in all required fields marked with *.'); return; }
+
+  var btn = document.getElementById('f-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  var needs = Array.from(document.querySelectorAll('input[name="f-needs"]:checked')).map(function(c){return c.value;}).join(', ');
+  var trs = Array.from(document.querySelectorAll('input[name="f-years"]:checked')).map(function(c){return c.value;}).join(', ');
+
+  var lead = {
+    name: document.getElementById('f-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    school: document.getElementById('f-school').value.trim(),
+    district: document.getElementById('f-district').value.trim(),
+    contact: contact.value,
+    provider: document.getElementById('f-provider').value,
+    needs: needs,
+    trs: trs,
+    notes: document.getElementById('f-notes').value.trim(),
+    stage: 'New lead',
+    date: new Date().toISOString().split('T')[0],
+    source: document.getElementById('f-source') ? document.getElementById('f-source').value.trim() || 'QR form' : 'QR form'
+  };
+
+  var result = await sb.from('leads').insert([lead]);
+  if (result.error) {
+    alert('There was an error saving your info. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Submit & Book My Retirement Review';
+    return;
+  }
+
+  document.getElementById('f-intro').style.display='none';
+  document.getElementById('f-form-wrap').style.display='none';
+  document.getElementById('f-success').className='f-success show';
+  window.scrollTo(0,0);
+}
+
+function laterMsg() {
+  var btn = document.getElementById('f-later');
+  btn.textContent = "No problem — we'll follow up with a scheduling link shortly.";
+  btn.style.cursor='default'; btn.style.textDecoration='none'; btn.onclick=null;
+}
+
+// ── DASHBOARD ──
+async function loadLeads() {
+  var grid = document.getElementById('lead-grid');
+  grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading leads...</div>';
+  var result = await sb.from('leads').select('*').order('date', {ascending: false});
+  if (result.error) {
+    grid.innerHTML = '<div class="no-results">Error loading leads. Please refresh.</div>';
+    return;
+  }
+  leads = result.data || [];
+  renderToday();
+  renderLeads();
+}
+
+function getInitials(n) { return n.split(' ').map(function(x){return x[0];}).join('').substring(0,2).toUpperCase(); }
+function stageBadgeClass(s) { var m={'New lead':'stage-new','Meeting booked':'stage-booked','In review':'stage-review','Enrolled':'stage-enrolled'}; return m[s]||'stage-new'; }
+function formatDate(d) { if(!d) return ''; var dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function isToday(d) { return d===new Date().toISOString().split('T')[0]; }
+function isOverdue(d) { if(!d) return false; return new Date(d+'T00:00:00')<new Date(new Date().toDateString()); }
+
+function setStage(s) {
+  currentStage = s;
+  var tabs = document.querySelectorAll('.pipeline-tabs .tab');
+  var stages = ['all','New lead','Meeting booked','In review','Enrolled'];
+  var classes = ['tab all','tab new','tab booked','tab review','tab enrolled'];
+  tabs.forEach(function(t,i){ t.className = stages[i]===s ? classes[i] : ['tab','tab new','tab booked','tab review','tab enrolled'][i]; });
+  renderLeads();
+}
+
+function updateStats() {
+  var t=leads.length, n=leads.filter(function(l){return l.stage==='New lead';}).length,
+      b=leads.filter(function(l){return l.stage==='Meeting booked';}).length,
+      r=leads.filter(function(l){return l.stage==='In review';}).length,
+      e=leads.filter(function(l){return l.stage==='Enrolled';}).length;
+  document.getElementById('stat-total').textContent=t;
+  document.getElementById('stat-new').textContent=n;
+  document.getElementById('stat-booked').textContent=b;
+  document.getElementById('stat-review').textContent=r;
+  document.getElementById('stat-enrolled').textContent=e;
+  document.getElementById('count-all').textContent=t;
+  document.getElementById('count-new').textContent=n;
+  document.getElementById('count-booked').textContent=b;
+  document.getElementById('count-review').textContent=r;
+  document.getElementById('count-enrolled').textContent=e;
+}
+
+function renderToday() {
+  var today = new Date().toISOString().split('T')[0];
+  var overdue = leads.filter(function(l){return l.followup&&l.followup<today&&l.stage!=='Enrolled';});
+  var dueToday = leads.filter(function(l){return l.followup&&isToday(l.followup)&&l.stage!=='Enrolled';});
+  var meetingsToday = leads.filter(function(l){return l.stage==='Meeting booked'&&l.followup&&isToday(l.followup);});
+  var bar = document.getElementById('today-bar');
+  var dateStr = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  if (!overdue.length&&!dueToday.length&&!meetingsToday.length) {
+    bar.innerHTML='<div class="today-title">Today — '+dateStr+'</div><div class="today-none">&#10003; All clear — no follow-ups or meetings due today.</div>';
+    return;
+  }
+  function pills(items,cls){return items.map(function(l){return '<div class="today-pill '+cls+'"><span class="today-pill-name">'+l.name+'</span><span class="today-pill-detail">'+(l.school||'')+'</span></div>';}).join('');}
+  bar.innerHTML='<div class="today-title">Today — '+dateStr+'</div><div class="today-sections">'+(overdue.length?'<div class="today-section overdue"><div class="today-section-label">&#9888; Overdue ('+overdue.length+')</div>'+pills(overdue,'overdue')+'</div>':'')+(dueToday.length?'<div class="today-section today"><div class="today-section-label">&#9734; Follow-ups today ('+dueToday.length+')</div>'+pills(dueToday,'today')+'</div>':'')+(meetingsToday.length?'<div class="today-section meetings"><div class="today-section-label">&#128197; Meetings today ('+meetingsToday.length+')</div>'+pills(meetingsToday,'meeting')+'</div>':'')+'</div>';
+}
+
+function switchCardTab(btn, showId, hideId) {
+  var card = btn.closest('.lead-card');
+  card.querySelectorAll('.card-tab').forEach(function(t){ t.className='card-tab'; });
+  btn.className = 'card-tab active';
+  var show = document.getElementById(showId);
+  var hide = document.getElementById(hideId);
+  if (show) show.className = 'card-tab-body active';
+  if (hide) hide.className = 'card-tab-body';
+}
+
+function saveCardNote(id) {
+  var input = document.getElementById('note-input-'+id);
+  if (!input || !input.value.trim()) return;
+  var noteKey = 'notes_' + id;
+  var notes = JSON.parse(localStorage.getItem(noteKey) || '[]');
+  notes.unshift({ text: input.value.trim(), date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) });
+  localStorage.setItem(noteKey, JSON.stringify(notes));
+  var list = document.getElementById('notes-list-'+id);
+  if (list) list.innerHTML = notes.map(function(n){ return '<div class="note-item"><div class="note-item-text">'+n.text+'</div><div class="note-item-date">'+n.date+'</div></div>'; }).join('');
+  input.value = '';
+}
+
+function renderLeads() {
+  var q = document.getElementById('search-input').value.toLowerCase();
+  var filtered = leads.filter(function(l){ return (currentStage==='all'||l.stage===currentStage)&&(!q||l.name.toLowerCase().includes(q)); });
+  var grid = document.getElementById('lead-grid');
+  if (!filtered.length) { grid.innerHTML='<div class="no-results">No leads found'+(q?' for "'+q+'"':'')+'.</div>'; updateStats(); return; }
+  grid.innerHTML = filtered.map(function(l){
+    var noteKey = 'notes_' + l.id;
+    var savedNotes = JSON.parse(localStorage.getItem(noteKey) || '[]');
+    var notesHTML = savedNotes.length ? savedNotes.map(function(n){ return '<div class="note-item"><div class="note-item-text">'+n.text+'</div><div class="note-item-date">'+n.date+'</div></div>'; }).join('') : '<div class="no-notes">No notes yet</div>';
+    return '<div class="lead-card"><div class="card-top"><div class="card-avatar">'+getInitials(l.name)+'</div><div class="card-name-wrap"><div class="card-name">'+l.name+'</div><div class="card-school">'+(l.school||'')+(l.district?' · '+l.district:'')+'</div></div><span class="stage-badge '+stageBadgeClass(l.stage)+'">'+l.stage+'</span></div>'
+    +'<div class="card-tabs"><div class="card-tab active" onclick="switchCardTab(this,\'info-'+l.id+'\',\'notes-'+l.id+'\')">Info</div><div class="card-tab" onclick="switchCardTab(this,\'notes-'+l.id+'\',\'info-'+l.id+'\')">📝 Notes</div></div>'
+    +'<div class="card-tab-body active" id="info-'+l.id+'">'
+    +'<div class="card-divider"></div><div class="card-info">'
+    +(l.school?'<div class="card-row"><span class="icon">&#127979;</span>'+l.school+'</div>':'')
+    +'<div class="card-row"><span class="icon">&#9993;</span>'+l.email+'</div>'
+    +'<div class="card-row"><span class="icon">&#9990;</span>'+l.phone+'</div>'
+    +(l.contact?'<div class="card-row"><span class="icon">&#9734;</span><span style="color:#1a3a8f;font-weight:500">Best contact: '+l.contact+'</span></div>':'')
+    +(l.trs?'<div class="card-row"><span class="icon">&#128197;</span>TRS: '+l.trs+'</div>':'')
+    +(l.needs?'<div class="card-row"><span class="icon">&#9998;</span><span style="font-size:11px">'+l.needs+'</span></div>':'')
+    +(l.followup?'<div class="card-row"><span class="icon">&#9888;</span><span style="color:'+(isOverdue(l.followup)?'#c0392b':'#1a3a8f')+';font-weight:500;font-size:11px">Follow up: '+formatDate(l.followup)+(isOverdue(l.followup)?' — Overdue':'')+'</span></div>':'')
+    +'</div>'
+    +'<div class="contact-actions">'
+    +(l.phone?'<a class="contact-action call" href="tel:'+l.phone+'">📞 Call</a>':'')
+    +'<a class="contact-action text" href="sms:'+l.phone+'">💬 Text</a>'
+    +(l.email?'<a class="contact-action email" href="mailto:'+l.email+'">✉ Email</a>':'')
+    +'</div></div>'
+    +'<div class="card-tab-body" id="notes-'+l.id+'">'
+    +'<div class="notes-list" id="notes-list-'+l.id+'">'+notesHTML+'</div>'
+    +'<textarea class="note-textarea" id="note-input-'+l.id+'" placeholder="Add a note..."></textarea>'
+    +'<button class="save-note-btn" onclick="saveCardNote(\'' + l.id + '\')">Save Note</button>'
+    +'</div>'
+    +'<div class="card-bottom"><div class="card-date">'+formatDate(l.date)+'</div><div class="card-actions"><select class="action-btn" onchange="updateStage(\''+l.id+'\',this.value)" style="padding:4px 6px"><option value="New lead"'+(l.stage==='New lead'?' selected':'')+'>New lead</option><option value="Meeting booked"'+(l.stage==='Meeting booked'?' selected':'')+'>Meeting booked</option><option value="In review"'+(l.stage==='In review'?' selected':'')+'>In review</option><option value="Enrolled"'+(l.stage==='Enrolled'?' selected':'')+'>Enrolled</option></select><button class="action-btn" onclick="openPrepSheet(\\\\\\''+l.id+'\\\\\\')">📋</button><button class="action-btn" onclick="openEditModal(\''+l.id+'\')">Edit</button><button class="action-btn primary" onclick="deleteLead(\''+l.id+'\')">&#10005;</button></div></div></div>';
+  }).join('');
+  updateStats();
+}
+
+async function updateStage(id, stage) {
+  await sb.from('leads').update({stage:stage}).eq('id',id);
+  var l = leads.find(function(x){return x.id==id;});
+  if (l) { l.stage=stage; renderToday(); renderLeads(); }
+}
+
+async function deleteLead(id) {
+  if (!confirm('Remove this lead?')) return;
+  await sb.from('leads').delete().eq('id',id);
+  leads = leads.filter(function(l){return l.id!=id;});
+  renderToday(); renderLeads();
+}
+
+function openAddModal() {
+  editingId=null;
+  document.getElementById('modal-title').textContent='Add New Lead';
+  ['m-name','m-phone','m-email','m-school','m-district','m-needs','m-notes','m-followup','m-birthday','m-trsdate','m-source'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('m-stage').value='New lead';
+  document.getElementById('m-contact').value='';
+  document.getElementById('m-trs').value='';
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function openEditModal(id) {
+  var l = leads.find(function(x){return x.id==id;});
+  if (!l) return;
+  editingId=id;
+  document.getElementById('modal-title').textContent='Edit Lead';
+  document.getElementById('m-name').value=l.name||'';
+  document.getElementById('m-phone').value=l.phone||'';
+  document.getElementById('m-email').value=l.email||'';
+  document.getElementById('m-school').value=l.school||'';
+  document.getElementById('m-district').value=l.district||'';
+  document.getElementById('m-stage').value=l.stage||'New lead';
+  document.getElementById('m-contact').value=l.contact||'';
+  document.getElementById('m-trs').value=l.trs||'';
+  document.getElementById('m-needs').value=l.needs||'';
+  document.getElementById('m-followup').value=l.followup||'';
+  document.getElementById('m-notes').value=l.notes||'';
+  document.getElementById('m-birthday').value=l.birthday||'';
+  document.getElementById('m-trsdate').value=l.trsdate||'';
+  document.getElementById('m-source').value=l.source||'';
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function closeModal() { document.getElementById('modal-bg').classList.remove('show'); editingId=null; }
+
+async function saveLead() {
+  var name=document.getElementById('m-name').value.trim();
+  var phone=document.getElementById('m-phone').value.trim();
+  var email=document.getElementById('m-email').value.trim();
+  if (!name||!phone||!email) { alert('Please fill in name, phone, and email.'); return; }
+  var btn=document.getElementById('modal-save-btn');
+  btn.disabled=true; btn.textContent='Saving...';
+  var data={name:name,phone:phone,email:email,school:document.getElementById('m-school').value.trim(),district:document.getElementById('m-district').value.trim(),stage:document.getElementById('m-stage').value,contact:document.getElementById('m-contact').value,trs:document.getElementById('m-trs').value,needs:document.getElementById('m-needs').value.trim(),followup:document.getElementById('m-followup').value,notes:document.getElementById('m-notes').value.trim(),birthday:document.getElementById('m-birthday').value,trsdate:document.getElementById('m-trsdate').value,source:document.getElementById('m-source').value.trim()};
+  if (editingId) {
+    await sb.from('leads').update(data).eq('id',editingId);
+  } else {
+    data.date=new Date().toISOString().split('T')[0];
+    data.source='Manual';
+    await sb.from('leads').insert([data]);
+  }
+  btn.disabled=false; btn.textContent='Save Lead';
+  closeModal();
+  loadLeads();
+}
+
+// ── SCANNER ──
+function showScanCard(id) {
+  ['sc-upload','sc-scanning','sc-results','sc-success'].forEach(function(c){
+    document.getElementById(c).className='sc-card'+(c===id?' active':'');
+  });
+}
+
+function handlePhoto(input) {
+  var file=input.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    photoBase64=e.target.result.split(',')[1];
+    var img=document.getElementById('preview-img');
+    img.src=e.target.result; img.style.display='block';
+    document.getElementById('scan-btn').style.display='block';
+    document.getElementById('upload-error').style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function startScan() {
+  if (!photoBase64) return;
+  showScanCard('sc-scanning');
+  try {
+    var response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:photoBase64}},
+          {type:'text',text:'This is a retirement plan report card filled out by a teacher. Extract all info and return ONLY a JSON object with keys: name, phone, email, school, district, provider, trs (use: "0-2 years", "3-5 years", "6-10 years", "11-20 years", "20+ years"), needs, notes. Empty string if not found. Return ONLY JSON.'}
+        ]}]
+      })
+    });
+    var data=await response.json();
+    var text=data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    var extracted=JSON.parse(text);
+    ['name','phone','email','school','district','provider','needs','notes'].forEach(function(f){
+      var el=document.getElementById('r-'+f); if(el) el.value=extracted[f]||'';
+    });
+    if(extracted.trs) document.getElementById('r-trs').value=extracted.trs;
+    var detected=Object.values(extracted).filter(function(v){return v&&v.length>0;}).length;
+    var badge=document.getElementById('conf-badge');
+    var pct=Math.round((detected/9)*100);
+    badge.innerHTML=pct>=70?'<span class="conf-badge high">&#10003; '+detected+' of 9 fields detected</span>':pct>=40?'<span class="conf-badge medium">&#9888; '+detected+' of 9 fields detected — review carefully</span>':'<span class="conf-badge low">&#9888; Only '+detected+' fields detected — photo may be unclear</span>';
+    showScanCard('sc-results');
+  } catch(e) {
+    document.getElementById('scan-error').textContent='Could not read the card. Please check the photo is clear and try again.';
+    document.getElementById('scan-error').style.display='block';
+    showScanCard('sc-results');
+  }
+}
+
+async function saveScanLead() {
+  var name=document.getElementById('r-name').value.trim();
+  if(!name){alert('Please enter at least a name before saving.');return;}
+  var btn=document.getElementById('sc-save-btn');
+  btn.disabled=true; btn.textContent='Saving...';
+  var lead={name:name,phone:document.getElementById('r-phone').value.trim(),email:document.getElementById('r-email').value.trim(),school:document.getElementById('r-school').value.trim(),district:document.getElementById('r-district').value.trim(),provider:document.getElementById('r-provider').value.trim(),trs:document.getElementById('r-trs').value,needs:document.getElementById('r-needs').value.trim(),notes:document.getElementById('r-notes').value.trim(),contact:'',stage:'New lead',date:new Date().toISOString().split('T')[0],source:'Card scan'};
+  await sb.from('leads').insert([lead]);
+  var preview=document.getElementById('sc-preview');
+  preview.innerHTML='<div class="sc-preview-name">'+name+'</div>'+(lead.school?'<div class="sc-preview-row">&#127979; '+lead.school+(lead.district?' · '+lead.district:'')+'</div>':'')+(lead.phone?'<div class="sc-preview-row">&#9990; '+lead.phone+'</div>':'')+(lead.email?'<div class="sc-preview-row">&#9993; '+lead.email+'</div>':'')+'<div class="sc-preview-row" style="color:#1a3a8f;font-weight:500;margin-top:6px">&#9632; Added as New Lead</div>';
+  btn.disabled=false; btn.textContent='Save Lead to Dashboard';
+  showScanCard('sc-success');
+}
+
+function resetScanner() {
+  photoBase64=null;
+  document.getElementById('preview-img').style.display='none';
+  document.getElementById('scan-btn').style.display='none';
+  document.getElementById('photo-input').value='';
+  document.getElementById('upload-error').style.display='none';
+  document.getElementById('scan-error').style.display='none';
+  ['name','phone','email','school','district','provider','needs','notes'].forEach(function(f){
+    var el=document.getElementById('r-'+f); if(el) el.value='';
+  });
+  document.getElementById('r-trs').value='';
+  document.getElementById('conf-badge').innerHTML='';
+  showScanCard('sc-upload');
+}
+
+// ── DOCUMENTS ──
+var docFileBase64 = null;
+var docFileType = null;
+var docFileName = null;
+var currentDocFilter = 'all';
+var sendingDocId = null;
+
+function handleDocUpload(input) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    docFileBase64 = e.target.result;
+    docFileType = file.type;
+    docFileName = file.name;
+    var nameEl = document.getElementById('doc-file-name');
+    nameEl.textContent = '📎 ' + file.name;
+    nameEl.style.display = 'block';
+    document.getElementById('doc-upload-zone').style.borderColor = '#1a3a8f';
+    if (!document.getElementById('doc-name').value) {
+      document.getElementById('doc-name').value = file.name.replace(/\.[^/.]+$/, '');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function getDocCatClass(cat) {
+  if (cat.includes('403')) return 'doc-cat-403';
+  if (cat.includes('Enrollment')) return 'doc-cat-enroll';
+  if (cat.includes('Life')) return 'doc-cat-life';
+  if (cat.includes('TRS')) return 'doc-cat-trs';
+  return 'doc-cat-flyer';
+}
+
+function getDocIcon(cat) {
+  if (cat.includes('403')) return '📊';
+  if (cat.includes('Enrollment')) return '📝';
+  if (cat.includes('Life')) return '🛡️';
+  if (cat.includes('TRS')) return '🏛️';
+  return '📄';
+}
+
+function addDocument() {
+  var name = document.getElementById('doc-name').value.trim();
+  var category = document.getElementById('doc-category').value;
+  if (!name || !category) { alert('Please fill in document name and category.'); return; }
+  var docs = JSON.parse(localStorage.getItem('rr-docs') || '[]');
+  docs.unshift({
+    id: Date.now(),
+    name: name,
+    category: category,
+    desc: document.getElementById('doc-desc').value.trim(),
+    file: docFileBase64,
+    fileType: docFileType,
+    fileName: docFileName,
+    date: new Date().toISOString().split('T')[0],
+    sentCount: 0
+  });
+  localStorage.setItem('rr-docs', JSON.stringify(docs));
+  document.getElementById('doc-name').value = '';
+  document.getElementById('doc-category').value = '';
+  document.getElementById('doc-desc').value = '';
+  document.getElementById('doc-file-name').style.display = 'none';
+  document.getElementById('doc-upload-zone').style.borderColor = '#c8d0f0';
+  document.getElementById('doc-file').value = '';
+  docFileBase64 = null; docFileType = null; docFileName = null;
+  renderDocs(currentDocFilter);
+}
+
+function deleteDoc(id) {
+  if (!confirm('Delete this document?')) return;
+  var docs = JSON.parse(localStorage.getItem('rr-docs') || '[]');
+  docs = docs.filter(function(d){ return d.id !== id; });
+  localStorage.setItem('rr-docs', JSON.stringify(docs));
+  renderDocs(currentDocFilter);
+}
+
+function filterDocs(cat, btn) {
+  currentDocFilter = cat;
+  document.querySelectorAll('#dash-docs .r-filter').forEach(function(b){ b.className='r-filter'; });
+  btn.className = 'r-filter active';
+  renderDocs(cat);
+}
+
+function renderDocs(filter) {
+  var docs = JSON.parse(localStorage.getItem('rr-docs') || '[]');
+  var filtered = filter === 'all' ? docs : docs.filter(function(d){ return d.category === filter; });
+  var totalSent = docs.reduce(function(s,d){ return s + (d.sentCount||0); }, 0);
+  document.getElementById('doc-total').textContent = docs.length;
+  document.getElementById('doc-sent').textContent = totalSent;
+  var list = document.getElementById('doc-list');
+  if (!filtered.length) { list.innerHTML = '<div class="docs-empty">No documents yet'+(filter!=='all'?' in this category':'')+'.<br><span style="font-size:12px">Upload your first document above.</span></div>'; return; }
+  list.innerHTML = filtered.map(function(d){
+    return '<div class="doc-card">'
+      +'<div class="doc-icon">'+getDocIcon(d.category)+'</div>'
+      +'<div class="doc-info">'
+      +'<div class="doc-name">'+d.name+'</div>'
+      +'<span class="doc-cat '+getDocCatClass(d.category)+'">'+d.category+'</span>'
+      +(d.sentCount?'<span class="doc-sent-badge">Sent '+d.sentCount+'x</span>':'')
+      +(d.desc?'<div class="doc-desc">'+d.desc+'</div>':'')
+      +'<div class="doc-date">Added '+formatDate(d.date)+(d.fileName?' · '+d.fileName:'')+'</div>'
+      +'<div class="doc-actions">'
+      +'<button class="doc-btn send" onclick="openSendModal('+d.id+')">✉ Send to Client</button>'
+      +(d.file?'<button class="doc-btn" style="background:#f0f4fc;color:#1a3a8f" onclick="downloadDoc('+d.id+')">⬇ Download</button>':'')
+      +'<button class="doc-btn del" onclick="deleteDoc('+d.id+')">🗑 Delete</button>'
+      +'</div></div></div>';
+  }).join('');
+}
+
+function downloadDoc(id) {
+  var docs = JSON.parse(localStorage.getItem('rr-docs') || '[]');
+  var doc = docs.find(function(d){ return d.id === id; });
+  if (!doc || !doc.file) return;
+  var a = document.createElement('a');
+  a.href = doc.file;
+  a.download = doc.fileName || doc.name;
+  a.click();
+}
+
+function openSendModal(id) {
+  sendingDocId = id;
+  var docs = JSON.parse(localStorage.getItem('rr-docs') || '[]');
+  var doc = docs.find(function(d){ return d.id === id; });
+  if (!doc) return;
+  document.getElementById('send-doc-name').textContent = '📄 ' + doc.name;
+  document.getElementById('send-email').value = '';
+  document.getElementById('send-subject').value = 'Retirement Planning — ' + doc.name;
+  document.getElementById('send-message').value = 'Hi,\n\nI wanted to share this resource with you as we discussed. Please let me know if you have any questions!\n\nBest,\nJessica Goss\nSummit Life Group';
+  var select = document.getElementById('send-lead-select');
+  select.innerHTML = '<option value="">Choose from your leads...</option>';
+  leads.forEach(function(l){ select.innerHTML += '<option value="'+l.email+'">'+l.name+' — '+l.email+'</option>'; });
+  document.getElementById('send-modal-bg').classList.add('show');
+}
+
+function closeSendModal() {
+  document.getElementById('send-modal-bg').classList.remove('show');
+  sendingDocId = null;
+}
+
+function fillLeadEmail() {
+  var val = document.getElementById('send-lead-select').value;
+  if (val) document.getElementById('send-email').value = val;
+}
+
+function sendDocument() {
+  var email = document.getElementById('send-email').value.trim();
+  var subject = document.getElementById('send-subject').value.trim();
+  var message = document.getElementById('send-message').value.trim();
+  if (!email) { alert('Please enter an email address.'); return; }
+  var docs = JSON.parse(localStorage.getItem('rr-docs') || '[]');
+  var doc = docs.find(function(d){ return d.id === sendingDocId; });
+  if (doc) { doc.sentCount = (doc.sentCount||0) + 1; localStorage.setItem('rr-docs', JSON.stringify(docs)); }
+  var mailto = 'mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message);
+  window.open(mailto);
+  closeSendModal();
+  renderDocs(currentDocFilter);
+}
+
+document.getElementById('send-modal-bg').addEventListener('click', function(e){ if(e.target===this) closeSendModal(); });
+
+// ── SCHOOLS ──
+function addSchool() {
+  var name = document.getElementById('sch-name').value.trim();
+  var district = document.getElementById('sch-district').value.trim();
+  if (!name || !district) { alert('Please fill in school name and district.'); return; }
+  var schools = JSON.parse(localStorage.getItem('rr-schools') || '[]');
+  schools.unshift({
+    id: Date.now(),
+    name: name,
+    district: district,
+    contact: document.getElementById('sch-contact').value.trim(),
+    phone: document.getElementById('sch-phone').value.trim(),
+    address: document.getElementById('sch-address').value.trim(),
+    last: document.getElementById('sch-last').value,
+    next: document.getElementById('sch-next').value,
+    notes: document.getElementById('sch-notes').value.trim()
+  });
+  localStorage.setItem('rr-schools', JSON.stringify(schools));
+  ['sch-name','sch-district','sch-contact','sch-phone','sch-address','sch-last','sch-next','sch-notes'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value='';
+  });
+  renderSchools();
+}
+
+function deleteSchool(id) {
+  if (!confirm('Remove this school?')) return;
+  var schools = JSON.parse(localStorage.getItem('rr-schools') || '[]');
+  schools = schools.filter(function(s){ return s.id !== id; });
+  localStorage.setItem('rr-schools', JSON.stringify(schools));
+  renderSchools();
+}
+
+function renderSchools() {
+  var schools = JSON.parse(localStorage.getItem('rr-schools') || '[]');
+  var q = document.getElementById('sch-search') ? document.getElementById('sch-search').value.toLowerCase() : '';
+  var filtered = schools.filter(function(s){ return !q || s.name.toLowerCase().includes(q) || s.district.toLowerCase().includes(q); });
+  var today = new Date().toISOString().split('T')[0];
+  var visited = schools.filter(function(s){ return s.last; }).length;
+  var upcoming = schools.filter(function(s){ return s.next && s.next >= today; }).length;
+  document.getElementById('sch-total').textContent = schools.length;
+  document.getElementById('sch-visited').textContent = visited;
+  document.getElementById('sch-upcoming').textContent = upcoming;
+  var list = document.getElementById('school-list');
+  if (!filtered.length) { list.innerHTML = '<div class="schools-empty">No schools added yet.</div>'; return; }
+  list.innerHTML = filtered.map(function(s){
+    var nextClass = s.next && s.next < today ? 'school-date-pill overdue' : 'school-date-pill next';
+    var nextLabel = s.next && s.next < today ? 'Visit overdue' : 'Next visit';
+    return '<div class="school-card">'
+      +'<div class="school-card-top"><div class="school-avatar">🏫</div><div class="school-name-wrap"><div class="school-name">'+s.name+'</div><div class="school-district">'+s.district+'</div></div><div class="school-actions"><button class="action-btn primary" onclick="deleteSchool('+s.id+')">✕</button></div></div>'
+      +'<div class="school-divider"></div>'
+      +'<div class="school-info">'
+      +(s.contact?'<div class="school-row"><span class="icon">👤</span>'+s.contact+'</div>':'')
+      +(s.phone?'<div class="school-row"><span class="icon">✆</span>'+s.phone+'</div>':'')
+      +(s.address?'<div class="school-row"><span class="icon">📍</span>'+s.address+'</div>':'')
+      +(s.notes?'<div class="school-row"><span class="icon">✎</span><span style="font-size:11px;color:#888">'+s.notes+'</span></div>':'')
+      +'</div>'
+      +(s.last||s.next?'<div class="school-dates">'+(s.last?'<div class="school-date-pill last"><div class="school-date-label">Last visit</div><div class="school-date-val">'+formatDate(s.last)+'</div></div>':'')+(s.next?'<div class="'+nextClass+'"><div class="school-date-label">'+nextLabel+'</div><div class="school-date-val">'+formatDate(s.next)+'</div></div>':'')+'</div>':'')
+      +(s.phone?'<div class="school-contact-actions"><a class="contact-action call" href="tel:'+s.phone+'">📞 Call</a><a class="contact-action text" href="sms:'+s.phone+'">💬 Text</a></div>':'')
+      +'</div>';
+  }).join('');
+}
+
+
+// ── MILESTONES ──
+function getDaysUntil(dateStr) {
+  if (!dateStr) return null;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var parts = dateStr.split('-');
+  var target = new Date(today.getFullYear(), parseInt(parts[1])-1, parseInt(parts[2]));
+  if (target < today) target.setFullYear(today.getFullYear()+1);
+  return Math.round((target-today)/(1000*60*60*24));
+}
+
+function getTRSYears(trsdate) {
+  if (!trsdate) return null;
+  var start = new Date(trsdate);
+  var now = new Date();
+  return Math.floor((now-start)/(1000*60*60*24*365.25));
+}
+
+function renderMilestones() {
+  var upcomingEl = document.getElementById('milestones-upcoming');
+  var allEl = document.getElementById('milestones-all');
+  var withDates = leads.filter(function(l){ return l.birthday || l.trsdate; });
+  var upcoming = [];
+  withDates.forEach(function(l) {
+    if (l.birthday) {
+      var days = getDaysUntil(l.birthday);
+      if (days !== null && days <= 30) upcoming.push({lead:l, type:'Birthday', days:days, icon:'🎂'});
+    }
+    if (l.trsdate) {
+      var days = getDaysUntil(l.trsdate);
+      var yrs = getTRSYears(l.trsdate);
+      if (days !== null && days <= 30) upcoming.push({lead:l, type:'TRS Year '+(yrs+1)+' Anniversary', days:days, icon:'🏛️'});
+    }
+  });
+  upcoming.sort(function(a,b){return a.days-b.days;});
+
+  if (upcoming.length) {
+    upcomingEl.innerHTML = '<div style="font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#c0392b;margin-bottom:10px">🔔 Coming up in the next 30 days</div>'
+    + upcoming.map(function(u){
+      var daysLabel = u.days===0 ? 'Today!' : u.days===1 ? 'Tomorrow' : 'In '+u.days+' days';
+      return '<div style="background:white;border-radius:10px;padding:14px 16px;box-shadow:0 2px 6px rgba(26,58,143,0.07);border:1.5px solid #e8eaf4;margin-bottom:8px;display:flex;align-items:center;gap:12px">'
+        +'<div style="font-size:28px">'+u.icon+'</div>'
+        +'<div style="flex:1"><div style="font-family:Playfair Display,serif;font-size:14px;font-weight:500;color:#1a1a2e">'+u.lead.name+'</div>'
+        +'<div style="font-size:12px;color:#555;margin-top:2px">'+u.type+'</div>'
+        +'<div style="font-size:11px;color:#888;margin-top:1px">'+(u.lead.school||'')+'</div></div>'
+        +'<div style="text-align:right"><div style="font-family:Playfair Display,serif;font-size:16px;font-weight:600;color:'+(u.days<=7?'#c0392b':'#1a3a8f')+'">'+daysLabel+'</div>'
+        +'<a class="contact-action call" href="tel:'+u.lead.phone+'" style="display:inline-flex;margin-top:6px;padding:5px 10px;font-size:11px">📞 Call</a></div>'
+        +'</div>';
+    }).join('');
+  } else {
+    upcomingEl.innerHTML = '<div style="background:#f0f4fc;border-radius:8px;padding:14px;text-align:center;font-size:13px;color:#aaa;margin-bottom:16px">✓ No milestones in the next 30 days</div>';
+  }
+
+  if (withDates.length) {
+    allEl.innerHTML = withDates.map(function(l){
+      var bday = l.birthday ? '<div style="font-size:11px;color:#555">🎂 Birthday: '+formatDate(l.birthday)+(getDaysUntil(l.birthday)!==null?' (in '+getDaysUntil(l.birthday)+' days)':'')+'</div>' : '';
+      var trs = l.trsdate ? '<div style="font-size:11px;color:#555">🏛️ TRS start: '+formatDate(l.trsdate)+' ('+getTRSYears(l.trsdate)+' years)</div>' : '';
+      return '<div style="background:white;border-radius:10px;padding:12px 14px;box-shadow:0 2px 6px rgba(26,58,143,0.07);border:1.5px solid #e8eaf4;margin-bottom:8px">'
+        +'<div style="font-family:Playfair Display,serif;font-size:13px;font-weight:500;color:#1a1a2e;margin-bottom:4px">'+l.name+'</div>'
+        +'<div style="font-size:10px;color:#888;margin-bottom:6px">'+(l.school||'')+'</div>'
+        + bday + trs
+        +'</div>';
+    }).join('');
+  } else {
+    allEl.innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;font-size:13px">No milestone dates added yet.<br><span style="font-size:11px">Edit a lead to add their birthday or TRS start date.</span></div>';
+  }
+}
+
+// ── ANALYTICS ──
+function renderAnalytics() {
+  var el = document.getElementById('analytics-content');
+  if (!leads.length) { el.innerHTML='<div style="text-align:center;padding:40px;color:#bbb;font-size:13px">No leads yet to analyze.</div>'; return; }
+
+  // Source breakdown
+  var sources = {};
+  leads.forEach(function(l){
+    var src = l.source || 'Unknown';
+    sources[src] = (sources[src]||0)+1;
+  });
+  var srcSorted = Object.keys(sources).sort(function(a,b){return sources[b]-sources[a];});
+  var maxSrc = sources[srcSorted[0]] || 1;
+
+  // Stage breakdown
+  var stages = {'New lead':0,'Meeting booked':0,'In review':0,'Enrolled':0};
+  leads.forEach(function(l){ if(stages[l.stage]!==undefined) stages[l.stage]++; });
+  var convRate = leads.length ? Math.round((stages['Enrolled']/leads.length)*100) : 0;
+
+  // Needs breakdown
+  var needs = {};
+  leads.forEach(function(l){ if(l.needs) l.needs.split(',').forEach(function(n){ var k=n.trim(); if(k){needs[k]=(needs[k]||0)+1;} }); });
+  var needsSorted = Object.keys(needs).sort(function(a,b){return needs[b]-needs[a];});
+
+  el.innerHTML = '<div style="background:white;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(26,58,143,0.07);margin-bottom:14px">'
+    +'<div style="font-family:Playfair Display,serif;font-size:15px;color:#1a1a2e;margin-bottom:4px">Pipeline overview</div>'
+    +'<div style="font-size:12px;color:#888;margin-bottom:14px">Conversion rate: <strong style="color:#1a3a8f">'+convRate+'%</strong></div>'
+    +Object.keys(stages).map(function(s){
+      var pct = leads.length ? Math.round((stages[s]/leads.length)*100) : 0;
+      var colors = {'New lead':'#1a3a8f','Meeting booked':'#b07800','In review':'#1a3a8f','Enrolled':'#1a6e3a'};
+      return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:4px"><span>'+s+'</span><span style="font-weight:600">'+stages[s]+' leads ('+pct+'%)</span></div>'
+        +'<div style="background:#f0f2fb;border-radius:4px;height:8px;overflow:hidden"><div style="background:'+colors[s]+';height:100%;width:'+pct+'%;border-radius:4px;transition:width 0.5s"></div></div></div>';
+    }).join('')
+    +'</div>'
+    +'<div style="background:white;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(26,58,143,0.07);margin-bottom:14px">'
+    +'<div style="font-family:Playfair Display,serif;font-size:15px;color:#1a1a2e;margin-bottom:14px">Top lead sources</div>'
+    +srcSorted.slice(0,8).map(function(s){
+      var pct = Math.round((sources[s]/maxSrc)*100);
+      return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:4px"><span>'+s+'</span><span style="font-weight:600">'+sources[s]+' lead'+(sources[s]!==1?'s':'')+'</span></div>'
+        +'<div style="background:#f0f2fb;border-radius:4px;height:8px;overflow:hidden"><div style="background:#1a3a8f;height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
+    }).join('')
+    +'</div>'
+    +(needsSorted.length?'<div style="background:white;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(26,58,143,0.07)">'
+    +'<div style="font-family:Playfair Display,serif;font-size:15px;color:#1a1a2e;margin-bottom:14px">What teachers need most</div>'
+    +needsSorted.slice(0,5).map(function(n){
+      var pct = Math.round((needs[n]/leads.length)*100);
+      return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:4px"><span>'+n+'</span><span style="font-weight:600">'+needs[n]+' leads ('+pct+'%)</span></div>'
+        +'<div style="background:#f0f2fb;border-radius:4px;height:8px;overflow:hidden"><div style="background:#7ea8e8;height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
+    }).join('')+'</div>':'');
+}
+
+// ── PREP SHEET ──
+function openPrepSheet(id) {
+  var l = leads.find(function(x){return x.id==id;});
+  if (!l) return;
+  var trsYrs = l.trsdate ? getTRSYears(l.trsdate) + ' years in TRS' : (l.trs || 'Unknown');
+  var content = '<div class="modal-bg show" id="prep-modal" onclick="if(event.target===this)closePrepSheet()">'
+    +'<div class="modal" style="max-width:520px">'
+    +'<div class="modal-header"><div class="modal-title">📋 Appointment Prep — '+l.name+'</div><button class="modal-close" onclick="closePrepSheet()">&#215;</button></div>'
+    +'<div style="background:#1a3a8f;border-radius:10px;padding:14px 16px;color:#e8e4f8;margin-bottom:16px">'
+    +'<div style="font-family:Playfair Display,serif;font-size:18px;font-weight:500">'+l.name+'</div>'
+    +'<div style="font-size:12px;color:#a8b8e0;margin-top:3px">'+(l.school||'')+(l.district?' · '+l.district:'')+'</div>'
+    +'<div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">'
+    +(l.phone?'<div style="font-size:12px">📞 '+l.phone+'</div>':'')
+    +(l.email?'<div style="font-size:12px">✉ '+l.email+'</div>':'')
+    +(l.contact?'<div style="font-size:12px">★ Best: '+l.contact+'</div>':'')
+    +'</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+    +'<div style="background:#f0f4fc;border-radius:8px;padding:12px"><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#1a3a8f;margin-bottom:4px">Pipeline stage</div><div style="font-size:13px;font-weight:600;color:#1a1a2e">'+l.stage+'</div></div>'
+    +'<div style="background:#f0f4fc;border-radius:8px;padding:12px"><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#1a3a8f;margin-bottom:4px">Years in TRS</div><div style="font-size:13px;font-weight:600;color:#1a1a2e">'+trsYrs+'</div></div>'
+    +(l.provider?'<div style="background:#f0f4fc;border-radius:8px;padding:12px"><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#1a3a8f;margin-bottom:4px">Current provider</div><div style="font-size:13px;font-weight:600;color:#1a1a2e">'+l.provider+'</div></div>':'')
+    +(l.followup?'<div style="background:'+(isOverdue(l.followup)?'#fdf0f0':'#f0f4fc')+';border-radius:8px;padding:12px"><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:'+(isOverdue(l.followup)?'#c0392b':'#1a3a8f')+';margin-bottom:4px">Follow up</div><div style="font-size:13px;font-weight:600;color:#1a1a2e">'+formatDate(l.followup)+'</div></div>':'')
+    +'</div>'
+    +(l.needs?'<div style="background:#fff8e8;border-radius:8px;padding:12px 14px;margin-bottom:10px"><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#b07800;margin-bottom:6px">Needs help with</div><div style="font-size:13px;color:#1a1a2e">'+l.needs+'</div></div>':'')
+    +(l.notes?'<div style="background:#f0f4fc;border-radius:8px;padding:12px 14px;margin-bottom:10px"><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#1a3a8f;margin-bottom:6px">Notes</div><div style="font-size:13px;color:#1a1a2e;line-height:1.5">'+l.notes+'</div></div>':'')
+    +'<div style="background:#e8f8ee;border-radius:8px;padding:12px 14px;margin-bottom:16px"><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#1a6e3a;margin-bottom:6px">💡 Talking points</div>'
+    +'<ul style="padding-left:16px;font-size:12px;color:#1a1a2e;line-height:1.8">'
+    +(l.needs&&l.needs.includes('403(b)')?'<li>Walk through 403(b) plan options and contribution limits</li>':'')
+    +(l.needs&&l.needs.includes('Rollover')?'<li>Review rollover process from former employer plan</li>':'')
+    +(l.needs&&l.needs.includes('Life insurance')?'<li>Discuss life insurance options for educators</li>':'')
+    +(l.needs&&l.needs.includes('Review')?'<li>Review current plan performance and fees</li>':'')
+    +'<li>Explain how 403(b) supplements TRS pension</li>'
+    +'<li>Review retirement timeline based on '+trsYrs+'</li>'
+    +'<li>Ask about dependent coverage needs</li>'
+    +'</ul></div>'
+    +'<div style="display:flex;gap:8px">'
+    +(l.phone?'<a class="modal-save" href="tel:'+l.phone+'" style="flex:1;text-align:center;text-decoration:none;display:block;padding:11px">📞 Call Now</a>':'')
+    +(l.email?'<a class="modal-save" href="mailto:'+l.email+'" style="flex:1;text-align:center;text-decoration:none;display:block;padding:11px;background:#f0f4fc;color:#1a3a8f">✉ Email</a>':'')
+    +'<button class="modal-cancel" onclick="closePrepSheet()">Close</button>'
+    +'</div>'
+    +'</div></div>';
+  var div = document.createElement('div');
+  div.id = 'prep-container';
+  div.innerHTML = content;
+  document.body.appendChild(div);
+}
+
+function closePrepSheet() {
+  var el = document.getElementById('prep-container');
+  if (el) el.remove();
+}
+
+// ── RECEIPTS ──
+var receiptPhotoBase64 = null;
+var currentReceiptFilter = 'all';
+
+function handleReceiptPhoto(input) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    receiptPhotoBase64 = e.target.result;
+    var preview = document.getElementById('r-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('r-upload-zone').style.borderColor = '#1a3a8f';
+  };
+  reader.readAsDataURL(file);
+}
+
+function addReceipt() {
+  var amount = document.getElementById('r-amount').value;
+  var date = document.getElementById('r-date').value;
+  var category = document.getElementById('r-category').value;
+  var desc = document.getElementById('r-desc').value.trim();
+  if (!amount || !date || !category) { alert('Please fill in amount, date, and category.'); return; }
+  var receipts = JSON.parse(localStorage.getItem('rr-receipts') || '[]');
+  receipts.unshift({
+    id: Date.now(),
+    amount: parseFloat(amount).toFixed(2),
+    date: date,
+    category: category,
+    desc: desc,
+    photo: receiptPhotoBase64 || null
+  });
+  localStorage.setItem('rr-receipts', JSON.stringify(receipts));
+  // Reset form
+  document.getElementById('r-amount').value = '';
+  document.getElementById('r-date').value = '';
+  document.getElementById('r-category').value = '';
+  document.getElementById('r-desc').value = '';
+  document.getElementById('r-preview').style.display = 'none';
+  document.getElementById('r-upload-zone').style.borderColor = '#c8d0f0';
+  document.getElementById('r-photo').value = '';
+  receiptPhotoBase64 = null;
+  renderReceipts(currentReceiptFilter);
+}
+
+function deleteReceipt(id) {
+  if (!confirm('Delete this receipt?')) return;
+  var receipts = JSON.parse(localStorage.getItem('rr-receipts') || '[]');
+  receipts = receipts.filter(function(r){ return r.id !== id; });
+  localStorage.setItem('rr-receipts', JSON.stringify(receipts));
+  renderReceipts(currentReceiptFilter);
+}
+
+function filterReceipts(cat, btn) {
+  currentReceiptFilter = cat;
+  document.querySelectorAll('.r-filter').forEach(function(b){ b.className='r-filter'; });
+  btn.className = 'r-filter active';
+  renderReceipts(cat);
+}
+
+function getCatClass(cat) {
+  if (cat.includes('Meal')) return 'cat-meals';
+  if (cat.includes('Mile') || cat.includes('Travel')) return 'cat-travel';
+  if (cat.includes('Office')) return 'cat-office';
+  if (cat.includes('Market')) return 'cat-marketing';
+  return 'cat-professional';
+}
+
+function renderReceipts(filter) {
+  var receipts = JSON.parse(localStorage.getItem('rr-receipts') || '[]');
+  var filtered = filter === 'all' ? receipts : receipts.filter(function(r){ return r.category === filter; });
+  
+  // Update stats
+  var all = receipts;
+  var total = all.reduce(function(s,r){ return s + parseFloat(r.amount); }, 0);
+  var meals = all.filter(function(r){ return r.category.includes('Meal'); }).reduce(function(s,r){ return s + parseFloat(r.amount); }, 0);
+  var travel = all.filter(function(r){ return r.category.includes('Mile') || r.category.includes('Travel'); }).reduce(function(s,r){ return s + parseFloat(r.amount); }, 0);
+  var other = total - meals - travel;
+  document.getElementById('r-total').textContent = '$' + total.toFixed(2);
+  document.getElementById('r-meals').textContent = '$' + meals.toFixed(2);
+  document.getElementById('r-travel').textContent = '$' + travel.toFixed(2);
+  document.getElementById('r-other').textContent = '$' + other.toFixed(2);
+
+  var list = document.getElementById('receipt-list');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="receipts-empty">No receipts yet'+(filter!=='all'?' in this category':'')+'.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(function(r) {
+    var thumb = r.photo ? '<img src="'+r.photo+'" style="width:56px;height:56px;border-radius:8px;object-fit:cover">' : '<div style="width:56px;height:56px;border-radius:8px;background:#f0f2fb;display:flex;align-items:center;justify-content:center;font-size:22px">🧾</div>';
+    return '<div class="receipt-card">'
+      + thumb
+      + '<div class="receipt-info">'
+      + '<div><span class="receipt-amount">$'+r.amount+'</span><span class="receipt-cat '+getCatClass(r.category)+'">'+r.category+'</span></div>'
+      + (r.desc ? '<div class="receipt-desc">'+r.desc+'</div>' : '')
+      + '<div class="receipt-date">'+formatDate(r.date)+'</div>'
+      + '</div>'
+      + '<button class="receipt-delete" onclick="deleteReceipt('+r.id+')">✕</button>'
+      + '</div>';
+  }).join('');
+}
+
+// Set today's date as default for receipt date
+var rDateInput = document.getElementById('r-date');
+if (rDateInput) rDateInput.value = new Date().toISOString().split('T')[0];
+
+document.getElementById('modal-bg').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+function switchCardTab(id, tab) {
+  var info = document.getElementById('ci-'+id);
+  var notes = document.getElementById('cn-'+id);
+  var tabs = document.querySelectorAll('.ct-'+id);
+  tabs.forEach(function(t){ t.className='card-tab ct-'+id; });
+  if (tab==='info') {
+    if(info) info.style.display='block';
+    if(notes) notes.style.display='none';
+    tabs[0].className='card-tab ct-'+id+' active';
+  } else {
+    if(info) info.style.display='none';
+    if(notes) notes.style.display='block';
+    tabs[1].className='card-tab ct-'+id+' active';
+  }
+}
+
+function saveNote(id) {
+  var ta = document.getElementById('nt-'+id);
+  if (!ta || !ta.value.trim()) return;
+  var noteText = ta.value.trim();
+  var date = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  var container = document.getElementById('nl-'+id);
+  var noNotes = container.querySelector('.no-notes');
+  if (noNotes) noNotes.remove();
+  var item = document.createElement('div');
+  item.className = 'note-item';
+  item.innerHTML = '<div class="note-item-text">'+noteText+'</div><div class="note-item-date">'+date+'</div>';
+  container.insertBefore(item, container.firstChild);
+  ta.value = '';
+  // Save to leads array and Supabase
+  var lead = leads.find(function(l){return l.id==id;});
+  if (lead) {
+    var existing = lead.notes ? lead.notes + '\n['+date+'] ' + noteText : '['+date+'] ' + noteText;
+    lead.notes = existing;
+    sb.from('leads').update({notes: existing}).eq('id', id);
+  }
+}
+</script>
+</body>
+</html>

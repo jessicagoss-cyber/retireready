@@ -678,6 +678,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#f0f2fb;min-height:100vh}
   </div>
 </div>
 
+
 <script>
 // ── SUPABASE SETUP ──
 const SUPABASE_URL = 'https://kbwuwrfrnjruslkackzv.supabase.co';
@@ -690,6 +691,100 @@ var currentStage = 'all';
 var editingId = null;
 var photoBase64 = null;
 
+// ── ROUTING ──
+function getView() { return window.location.hash === '#dashboard' ? 'dashboard' : 'form'; }
+function showView(v) {
+  document.getElementById('view-form').className = 'view' + (v==='form' ? ' active' : '');
+  document.getElementById('view-dashboard').className = 'view' + (v==='dashboard' ? ' active' : '');
+  if (v === 'dashboard') { initDashboard(); }
+}
+window.addEventListener('hashchange', function(){ showView(getView()); });
+showView(getView());
+
+function showDashTab(tab) {
+  document.getElementById('dash-leads').style.display = tab==='leads' ? 'block' : 'none';
+  document.getElementById('dash-scanner').style.display = tab==='scanner' ? 'block' : 'none';
+  document.getElementById('dash-receipts').style.display = tab==='receipts' ? 'block' : 'none';
+  document.getElementById('dash-schools').style.display = tab==='schools' ? 'block' : 'none';
+  document.getElementById('dash-docs').style.display = tab==='docs' ? 'block' : 'none';
+  document.getElementById('dash-milestones').style.display = tab==='milestones' ? 'block' : 'none';
+  document.getElementById('dash-analytics').style.display = tab==='analytics' ? 'block' : 'none';
+  var btns = document.querySelectorAll('.d-nav-btn');
+  btns[0].className = 'd-nav-btn' + (tab==='leads' ? ' active' : '');
+  btns[1].className = 'd-nav-btn' + (tab==='scanner' ? ' active' : '');
+  btns[2].className = 'd-nav-btn' + (tab==='receipts' ? ' active' : '');
+  btns[3].className = 'd-nav-btn' + (tab==='schools' ? ' active' : '');
+  btns[4].className = 'd-nav-btn' + (tab==='docs' ? ' active' : '');
+  btns[5].className = 'd-nav-btn' + (tab==='milestones' ? ' active' : '');
+  btns[6].className = 'd-nav-btn' + (tab==='analytics' ? ' active' : '');
+  if (tab==='receipts') renderReceipts('all');
+  if (tab==='schools') renderSchools();
+  if (tab==='docs') renderDocs('all');
+  if (tab==='milestones') renderMilestones();
+  if (tab==='analytics') renderAnalytics();
+}
+
+function initDashboard() {
+  document.getElementById('todays-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  loadLeads();
+}
+
+// ── FORM ──
+async function submitForm() {
+  var required = ['f-name','f-email','f-phone','f-school','f-district'];
+  var valid = true;
+  required.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el.value.trim()) { el.style.borderColor='#c0392b'; valid=false; }
+    else el.style.borderColor='#e0dbd0';
+  });
+  var contact = document.querySelector('input[name="f-contact"]:checked');
+  if (!contact) { document.querySelector('.contact-options').style.outline='2px solid #c0392b'; valid=false; }
+  else document.querySelector('.contact-options').style.outline='none';
+  if (!valid) { alert('Please fill in all required fields marked with *.'); return; }
+
+  var btn = document.getElementById('f-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  var needs = Array.from(document.querySelectorAll('input[name="f-needs"]:checked')).map(function(c){return c.value;}).join(', ');
+  var trs = Array.from(document.querySelectorAll('input[name="f-years"]:checked')).map(function(c){return c.value;}).join(', ');
+
+  var lead = {
+    name: document.getElementById('f-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    school: document.getElementById('f-school').value.trim(),
+    district: document.getElementById('f-district').value.trim(),
+    contact: contact.value,
+    provider: document.getElementById('f-provider').value,
+    needs: needs,
+    trs: trs,
+    notes: document.getElementById('f-notes').value.trim(),
+    stage: 'New lead',
+    date: new Date().toISOString().split('T')[0],
+    source: document.getElementById('f-source') ? document.getElementById('f-source').value.trim() || 'QR form' : 'QR form'
+  };
+
+  var result = await sb.from('leads').insert([lead]);
+  if (result.error) {
+    alert('There was an error saving your info. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Submit & Book My Retirement Review';
+    return;
+  }
+
+  document.getElementById('f-intro').style.display='none';
+  document.getElementById('f-form-wrap').style.display='none';
+  document.getElementById('f-success').className='f-success show';
+  window.scrollTo(0,0);
+}
+
+function laterMsg() {
+  var btn = document.getElementById('f-later');
+  btn.textContent = "No problem — we'll follow up with a scheduling link shortly.";
+  btn.style.cursor='default'; btn.style.textDecoration='none'; btn.onclick=null;
+}
 
 // ── DASHBOARD ──
 async function loadLeads() {
@@ -1496,6 +1591,15 @@ function saveNote(id) {
     sb.from('leads').update({notes: existing}).eq('id', id);
   }
 }
+
+// ── DASHBOARD INIT ──
+window.addEventListener('load', function() {
+  document.querySelectorAll('.view').forEach(function(v){v.style.display='none';});
+  var d = document.getElementById('view-dashboard');
+  if (d) d.style.display = 'block';
+  showDashTab('leads');
+  initDashboard();
+});
 </script>
 </body>
-</html>
+  </html>

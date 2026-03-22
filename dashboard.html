@@ -698,8 +698,7 @@ function showView(v) {
   document.getElementById('view-dashboard').className = 'view' + (v==='dashboard' ? ' active' : '');
   if (v === 'dashboard') { initDashboard(); }
 }
-window.addEventListener('hashchange', function(){ showView(getView()); });
-showView(getView());
+document.getElementById('view-dashboard').className = 'view active';
 
 function showDashTab(tab) {
   document.getElementById('dash-leads').style.display = tab==='leads' ? 'block' : 'none';
@@ -900,7 +899,7 @@ function renderLeads() {
     +'<textarea class="note-textarea" id="note-input-'+l.id+'" placeholder="Add a note..."></textarea>'
     +'<button class="save-note-btn" onclick="saveCardNote(\'' + l.id + '\')">Save Note</button>'
     +'</div>'
-    +'<div class="card-bottom"><div class="card-date">'+formatDate(l.date)+'</div><div class="card-actions"><select class="action-btn" onchange="updateStage(\''+l.id+'\',this.value)" style="padding:4px 6px"><option value="New lead"'+(l.stage==='New lead'?' selected':'')+'>New lead</option><option value="Meeting booked"'+(l.stage==='Meeting booked'?' selected':'')+'>Meeting booked</option><option value="In review"'+(l.stage==='In review'?' selected':'')+'>In review</option><option value="Enrolled"'+(l.stage==='Enrolled'?' selected':'')+'>Enrolled</option></select><button class="action-btn" onclick="openPrepSheet(\\\\\\''+l.id+'\\\\\\')">📋</button><button class="action-btn" onclick="openEditModal(\''+l.id+'\')">Edit</button><button class="action-btn primary" onclick="deleteLead(\''+l.id+'\')">&#10005;</button></div></div></div>';
+    +'<div class="card-bottom"><div class="card-date">'+formatDate(l.date)+'</div><div class="card-actions"><select class="action-btn" onchange="updateStage(\''+l.id+'\',this.value)" style="padding:4px 6px"><option value="New lead"'+(l.stage==='New lead'?' selected':'')+'>New lead</option><option value="Meeting booked"'+(l.stage==='Meeting booked'?' selected':'')+'>Meeting booked</option><option value="In review"'+(l.stage==='In review'?' selected':'')+'>In review</option><option value="Enrolled"'+(l.stage==='Enrolled'?' selected':'')+'>Enrolled</option></select><button class="action-btn" onclick="openPrepSheet(\''+l.id+'\')">📋</button><button class="action-btn" onclick="openEditModal(\''+l.id+'\')">Edit</button><button class="action-btn primary" onclick="deleteLead(\''+l.id+'\')">&#10005;</button></div></div></div>';
   }).join('');
   updateStats();
 }

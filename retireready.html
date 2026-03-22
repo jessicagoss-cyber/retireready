@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RetireReady</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Sans 3',sans-serif;background:#f0f2fb;min-height:100vh}
+.view{display:none}
+.view.active{display:block}
+
+/* ── NAV (dashboard only) ── */
+.d-nav{background:#111d6e;display:flex}
+.d-nav-btn{flex:1;padding:12px 8px;border:none;background:none;color:#a8b8e0;font-family:'Source Sans 3',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s}
+.d-nav-btn.active{color:#e8e4f8;border-bottom-color:#7ea8e8;background:rgba(255,255,255,0.05)}
+
+/* ── HEADER ── */
+.header{background:#1a3a8f;padding:28px 24px;text-align:center}
+.logo{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:#e8e4f8}
+.logo span{color:#7ea8e8}
+.tagline{font-size:12px;color:#a8b8e0;margin-top:5px;letter-spacing:1.2px;text-transform:uppercase}
+
+/* ── FORM ── */
+.f-body{max-width:480px;margin:0 auto;padding:24px 20px 60px}
+.f-intro{background:white;border-radius:12px;padding:18px 20px;margin-bottom:16px;border-left:4px solid #1a3a8f}
+.f-intro p{font-size:13px;color:#3d3d3a;line-height:1.65;font-weight:300}
+.f-intro strong{color:#1a3a8f;font-weight:600}
+.f-card{background:white;border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(26,58,143,0.07)}
+.f-section{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#1a3a8f;margin:20px 0 10px;padding-bottom:5px;border-bottom:1px solid #e8e4dc}
+.f-section:first-child{margin-top:0}
+.f-field{margin-bottom:12px}
+.f-field label{display:block;font-size:11px;font-weight:600;color:#555;margin-bottom:4px}
+.f-field input,.f-field select,.f-field textarea{width:100%;padding:10px 12px;border:1.5px solid #e0dbd0;border-radius:8px;font-family:'Source Sans 3',sans-serif;font-size:14px;color:#1a1a1a;background:#fafaf7;transition:border-color 0.2s;-webkit-appearance:none;appearance:none}
+.f-field input:focus,.f-field select:focus,.f-field textarea:focus{outline:none;border-color:#1a3a8f;background:white}
+.f-field textarea{min-height:80px;resize:vertical;line-height:1.6}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.contact-options{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.contact-options label{display:flex;align-items:center;justify-content:center;font-size:13px;color:#3d3d3a;cursor:pointer;padding:9px 12px;border:1.5px solid #e0dbd0;border-radius:8px;background:#fafaf7;flex:1;min-width:100px;text-align:center;transition:border-color 0.2s,background 0.2s}
+.contact-options input[type="radio"]{display:none}
+.contact-options label:has(input:checked){border-color:#1a3a8f;background:#f0f4fc;color:#1a3a8f;font-weight:600}
+.check-options{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.check-item{display:flex;align-items:center;gap:8px;font-size:13px;color:#3d3d3a;cursor:pointer;padding:9px 12px;border:1.5px solid #e0dbd0;border-radius:8px;background:#fafaf7;width:100%;transition:border-color 0.2s,background 0.2s}
+.check-item input[type="checkbox"]{width:15px;height:15px;accent-color:#1a3a8f;flex-shrink:0}
+.check-item:has(input:checked){border-color:#1a3a8f;background:#f0f4fc;color:#1a3a8f;font-weight:600}
+.f-submit{width:100%;padding:14px;background:#1a3a8f;color:#e8e4f8;border:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:16px;font-weight:500;cursor:pointer;margin-top:20px;transition:background 0.2s}
+.f-submit:hover{background:#111d6e}
+.f-submit:disabled{background:#888;cursor:not-allowed}
+.f-privacy{font-size:11px;color:#aaa;text-align:center;margin-top:10px;line-height:1.5}
+.f-success{display:none;text-align:center;padding:20px 0}
+.f-success.show{display:block}
+.f-checkmark{width:64px;height:64px;background:#1a3a8f;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.f-checkmark svg{width:30px;height:30px}
+.f-success h2{font-family:'Playfair Display',serif;font-size:22px;color:#1a3a8f;margin-bottom:10px}
+.f-success p{font-size:13px;color:#666;line-height:1.65;margin-bottom:24px;font-weight:300}
+.f-book-btn{display:block;width:100%;padding:14px;background:#1a3a8f;color:#e8e4f8;text-decoration:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:16px;font-weight:500;cursor:pointer;border:none;text-align:center;transition:background 0.2s}
+.f-book-btn:hover{background:#111d6e}
+.f-later{display:block;margin-top:12px;font-size:12px;color:#aaa;cursor:pointer;text-decoration:underline;background:none;border:none;width:100%;text-align:center}
+.f-next-steps{background:#f0f4fc;border-radius:10px;padding:16px 18px;margin-top:20px;text-align:left}
+.f-next-steps .ns-title{font-size:10px;color:#1a3a8f;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px}
+.f-next-steps ul{padding-left:16px}
+.f-next-steps li{font-size:12px;color:#2d3f7a;line-height:1.8;font-weight:300}
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════ VIEW: FORM ═══════════ -->
+<div class="view active" id="view-form">
+  <div class="header">
+    <div class="logo">Retire<span>Ready</span></div>
+    <div class="tagline">Your retirement. Simplified.</div>
+  </div>
+  <div class="f-body">
+    <div class="f-intro" id="f-intro">
+      <p>Take <strong>2 minutes</strong> to share your info and we'll schedule a free, personalized retirement review — built specifically for educators like you.</p>
+    </div>
+    <div class="f-card" id="f-form-wrap">
+      <div class="f-section">Personal info</div>
+      <div class="f-field"><label>Full name *</label><input type="text" id="f-name" placeholder="Jane Smith"></div>
+      <div class="f-row">
+        <div class="f-field"><label>Email *</label><input type="email" id="f-email" placeholder="jane@school.edu"></div>
+        <div class="f-field"><label>Phone *</label><input type="tel" id="f-phone" placeholder="(404) 555-0100"></div>
+      </div>
+      <div class="f-field">
+        <label>Best way to contact you *</label>
+        <div class="contact-options">
+          <label><input type="radio" name="f-contact" value="Phone call"> Phone call</label>
+          <label><input type="radio" name="f-contact" value="Text message"> Text message</label>
+          <label><input type="radio" name="f-contact" value="Email"> Email</label>
+        </div>
+      </div>
+      <div class="f-section">School info</div>
+      <div class="f-field"><label>School name *</label><input type="text" id="f-school" placeholder="Lincoln Elementary"></div>
+      <div class="f-field"><label>District *</label><input type="text" id="f-district" placeholder="Atlanta Public Schools"></div>
+      <div class="f-section">Retirement details</div>
+      <div class="f-field"><label>Current 403(b)/457 retirement plan</label>
+        <select id="f-provider">
+          <option value="">Select provider...</option>
+          <option>AXA / Equitable</option><option>Lincoln Investment</option><option>Voya Financial</option>
+          <option>Aspire Financial Services</option><option>Security Benefit</option><option>TIAA</option>
+          <option>Fidelity</option><option>Nationwide</option><option>MissionSquare (ICMA-RC)</option>
+          <option>457(b) plan</option><option>Both 403(b) and 457</option><option>Not sure</option>
+          <option>I don't have one yet</option>
+        </select>
+      </div>
+      <div class="f-field">
+        <label>I need help with... <span style="font-weight:300;color:#999">(select all that apply)</span></label>
+        <div class="check-options">
+          <label class="check-item"><input type="checkbox" name="f-needs" value="Set up new 403(b)"> Set up new 403(b)</label>
+          <label class="check-item"><input type="checkbox" name="f-needs" value="Review current 403(b)/457 retirement plan"> Review current 403(b)/457 retirement plan</label>
+          <label class="check-item"><input type="checkbox" name="f-needs" value="Life insurance info"> Life insurance info</label>
+          <label class="check-item"><input type="checkbox" name="f-needs" value="Rollover/transfer info"> Rollover/transfer info (former employer, old plan, etc.)</label>
+        </div>
+      </div>
+      <div class="f-field">
+        <label>Years in TRS <span style="font-weight:300;color:#999">(select all that apply)</span></label>
+        <div class="check-options">
+          <label class="check-item"><input type="checkbox" name="f-years" value="0-2 years"> 0-2 years</label>
+          <label class="check-item"><input type="checkbox" name="f-years" value="3-5 years"> 3-5 years</label>
+          <label class="check-item"><input type="checkbox" name="f-years" value="6-10 years"> 6-10 years</label>
+          <label class="check-item"><input type="checkbox" name="f-years" value="11-20 years"> 11-20 years</label>
+          <label class="check-item"><input type="checkbox" name="f-years" value="20+ years"> 20+ years</label>
+        </div>
+      </div>
+      <div class="f-section">How did you hear about us?</div>
+      <div class="f-field">
+        <label>Event or school where you met us</label>
+        <input type="text" id="f-source" placeholder="e.g. Lincoln Elementary Teacher Breakfast">
+      </div>
+      <div class="f-section">Anything else we should know?</div>
+      <div class="f-field"><label>Notes, questions, or concerns</label><textarea id="f-notes" placeholder="e.g. I'm close to retirement and want to know my options..."></textarea></div>
+      <button class="f-submit" id="f-submit-btn" onclick="submitForm()">Submit &amp; Book My Retirement Review</button>
+      <p class="f-privacy">Your information is private and will only be used to prepare your retirement review.</p>
+    </div>
+    <div class="f-success" id="f-success">
+      <div class="f-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="#e8e4f8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+      <h2>You're all set!</h2>
+      <p>Thanks for submitting. The next step is to schedule your <strong>free retirement review</strong> — a quick 30-minute Zoom call at a time that works for you.</p>
+      <button class="f-book-btn" onclick="window.open('https://calendly.com/jessicagoss-summitlifegroup/30min','_blank')">Book My Free 30-Min Zoom Review</button>
+      <button class="f-later" id="f-later" onclick="laterMsg()">I'll schedule later</button>
+      <div class="f-next-steps">
+        <div class="ns-title">What to expect</div>
+        <ul>
+          <li>30-minute Zoom call, no pressure</li>
+          <li>Review your current 403(b) plan</li>
+          <li>Personalized retirement roadmap</li>
+          <li>Answers to all your questions</li>
+        </ul>
+      </div>
+    </div>
+    <div style="text-align:center;padding:16px 0 30px">
+    <button onclick="showView('dashboard')" style="padding:12px 28px;background:#1a3a8f;color:#e8e4f8;border:none;border-radius:8px;font-family:'Source Sans 3',sans-serif;font-size:14px;font-weight:500;cursor:pointer">📊 Open My Dashboard</button>
+  </div>
+</div>
+<script>
+// ── SUPABASE SETUP ──
+const SUPABASE_URL = 'https://kbwuwrfrnjruslkackzv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_7VVQHQqRVecVYcv1syQQHg_P8oAaUdw';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const CALENDLY = 'https://calendly.com/jessicagoss-summitlifegroup/30min';
+
+var leads = [];
+var currentStage = 'all';
+var editingId = null;
+var photoBase64 = null;
+
+// ── ROUTING ──
+function getView() { return window.location.hash === '#dashboard' ? 'dashboard' : 'form'; }
+function showView(v) {
+  document.getElementById('view-form').className = 'view' + (v==='form' ? ' active' : '');
+  document.getElementById('view-dashboard').className = 'view' + (v==='dashboard' ? ' active' : '');
+  if (v === 'dashboard') { initDashboard(); }
+}
+window.addEventListener('hashchange', function(){ showView(getView()); });
+showView(getView());
+
+function showDashTab(tab) {
+  document.getElementById('dash-leads').style.display = tab==='leads' ? 'block' : 'none';
+  document.getElementById('dash-scanner').style.display = tab==='scanner' ? 'block' : 'none';
+  document.getElementById('dash-receipts').style.display = tab==='receipts' ? 'block' : 'none';
+  document.getElementById('dash-schools').style.display = tab==='schools' ? 'block' : 'none';
+  document.getElementById('dash-docs').style.display = tab==='docs' ? 'block' : 'none';
+  document.getElementById('dash-milestones').style.display = tab==='milestones' ? 'block' : 'none';
+  document.getElementById('dash-analytics').style.display = tab==='analytics' ? 'block' : 'none';
+  var btns = document.querySelectorAll('.d-nav-btn');
+  btns[0].className = 'd-nav-btn' + (tab==='leads' ? ' active' : '');
+  btns[1].className = 'd-nav-btn' + (tab==='scanner' ? ' active' : '');
+  btns[2].className = 'd-nav-btn' + (tab==='receipts' ? ' active' : '');
+  btns[3].className = 'd-nav-btn' + (tab==='schools' ? ' active' : '');
+  btns[4].className = 'd-nav-btn' + (tab==='docs' ? ' active' : '');
+  btns[5].className = 'd-nav-btn' + (tab==='milestones' ? ' active' : '');
+  btns[6].className = 'd-nav-btn' + (tab==='analytics' ? ' active' : '');
+  if (tab==='receipts') renderReceipts('all');
+  if (tab==='schools') renderSchools();
+  if (tab==='docs') renderDocs('all');
+  if (tab==='milestones') renderMilestones();
+  if (tab==='analytics') renderAnalytics();
+}
+
+function initDashboard() {
+  document.getElementById('todays-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  loadLeads();
+}
+
+// ── FORM ──
+async function submitForm() {
+  var required = ['f-name','f-email','f-phone','f-school','f-district'];
+  var valid = true;
+  required.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el.value.trim()) { el.style.borderColor='#c0392b'; valid=false; }
+    else el.style.borderColor='#e0dbd0';
+  });
+  var contact = document.querySelector('input[name="f-contact"]:checked');
+  if (!contact) { document.querySelector('.contact-options').style.outline='2px solid #c0392b'; valid=false; }
+  else document.querySelector('.contact-options').style.outline='none';
+  if (!valid) { alert('Please fill in all required fields marked with *.'); return; }
+
+  var btn = document.getElementById('f-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  var needs = Array.from(document.querySelectorAll('input[name="f-needs"]:checked')).map(function(c){return c.value;}).join(', ');
+  var trs = Array.from(document.querySelectorAll('input[name="f-years"]:checked')).map(function(c){return c.value;}).join(', ');
+
+  var lead = {
+    name: document.getElementById('f-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    school: document.getElementById('f-school').value.trim(),
+    district: document.getElementById('f-district').value.trim(),
+    contact: contact.value,
+    provider: document.getElementById('f-provider').value,
+    needs: needs,
+    trs: trs,
+    notes: document.getElementById('f-notes').value.trim(),
+    stage: 'New lead',
+    date: new Date().toISOString().split('T')[0],
+    source: document.getElementById('f-source') ? document.getElementById('f-source').value.trim() || 'QR form' : 'QR form'
+  };
+
+  var result = await sb.from('leads').insert([lead]);
+  if (result.error) {
+    alert('There was an error saving your info. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Submit & Book My Retirement Review';
+    return;
+  }
+
+  document.getElementById('f-intro').style.display='none';
+  document.getElementById('f-form-wrap').style.display='none';
+  document.getElementById('f-success').className='f-success show';
+  window.scrollTo(0,0);
+}
+
+function laterMsg() {
+  var btn = document.getElementById('f-later');
+  btn.textContent = "No problem — we'll follow up with a scheduling link shortly.";
+  btn.style.cursor='default'; btn.style.textDecoration='none'; btn.onclick=null;
+}
+</script>
+</body>
+</html>

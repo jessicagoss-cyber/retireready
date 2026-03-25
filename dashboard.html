@@ -304,13 +304,17 @@ body{font-family:'Source Sans 3',sans-serif;background:#f0f2fb;min-height:100vh}
     <button class="d-nav-btn" onclick="showDashTab('docs')">📁 Docs</button>
     <button class="d-nav-btn" onclick="showDashTab('milestones')">🎂 Milestones</button>
     <button class="d-nav-btn" onclick="showDashTab('analytics')">📈 Analytics</button>
+    <button class="d-nav-btn" onclick="showGmailSettings()" style="flex:none;padding:12px 14px">📧 Gmail</button>
   </div>
 
   <!-- LEADS TAB -->
   <div id="dash-leads">
     <div class="d-header">
       <div><div class="d-logo">Retire<span>Ready</span></div><div class="d-sub">Lead Dashboard</div></div>
-      <div class="d-date" id="todays-date"></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="d-date" id="todays-date"></div>
+        <a href="retireready.html" style="padding:7px 14px;background:rgba(255,255,255,0.15);color:#e8e4f8;border-radius:8px;font-size:12px;font-weight:500;text-decoration:none;border:1px solid rgba(255,255,255,0.2)">&#8592; Lead Form</a>
+      </div>
     </div>
     <div class="stats-bar">
       <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
@@ -326,7 +330,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#f0f2fb;min-height:100vh}
     <div class="today-bar" id="today-bar"></div>
     <div class="toolbar">
       <div class="search-wrap"><span class="search-icon">&#9906;</span><input type="text" id="search-input" placeholder="Search by name..." oninput="renderLeads()"></div>
-      <button class="add-btn" onclick="openAddModal()">+ Add Lead</button>        <button class="add-btn" style="background:#2d6a4f;margin-left:8px" onclick="exportCSV()">&#11015; Export CSV</button>        <button class="add-btn" style="background:#2d6a4f;margin-left:8px" onclick="exportCSV()">&#11015; Export CSV</button>
+      <button class="add-btn" onclick="openAddModal()">+ Add Lead</button>        <button class="add-btn" style="background:#2d6a4f;margin-left:8px" onclick="exportCSV()">&#11015; Export CSV</button>
     </div>
     <div class="pipeline-tabs">
       <div class="tab all" onclick="setStage('all')">All <span class="count" id="count-all">0</span></div>
@@ -349,6 +353,11 @@ body{font-family:'Source Sans 3',sans-serif;background:#f0f2fb;min-height:100vh}
         <div class="sc-num">1</div>
         <div class="sc-title">Take or upload a photo</div>
         <div class="sc-sub">Point your camera at a paper report card. The AI will read it and fill in all the fields automatically.</div>
+        <div style="background:#f0f4fc;border-radius:9px;padding:12px 14px;margin-bottom:12px">
+          <label style="font-size:10px;font-weight:600;color:#1a3a8f;text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:5px">🔑 Anthropic API Key</label>
+          <input type="password" id="anthropic-key" placeholder="sk-ant-..." style="width:100%;padding:8px 11px;border:1.5px solid #1a3a8f;border-radius:7px;font-size:12px;font-family:'Source Sans 3',sans-serif;background:white" oninput="localStorage.setItem('rr-api-key',this.value)">
+          <div style="font-size:10px;color:#888;margin-top:4px">Saved locally in your browser. Never shared with anyone except Anthropic.</div>
+        </div>
         <div class="upload-zone">
           <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(this)">
           <div class="u-icon">📷</div>
@@ -716,6 +725,7 @@ function showDashTab(tab) {
   btns[4].className = 'd-nav-btn' + (tab==='docs' ? ' active' : '');
   btns[5].className = 'd-nav-btn' + (tab==='milestones' ? ' active' : '');
   btns[6].className = 'd-nav-btn' + (tab==='analytics' ? ' active' : '');
+  if (tab==='scanner') { var saved=localStorage.getItem('rr-api-key'); var ki=document.getElementById('anthropic-key'); if(ki&&saved&&!ki.value) ki.value=saved; }
   if (tab==='receipts') renderReceipts('all');
   if (tab==='schools') renderSchools();
   if (tab==='docs') renderDocs('all');
@@ -966,9 +976,12 @@ async function saveLead() {
     data.source='Manual';
     await sb.from('leads').insert([data]);
   }
+  var isNew = !editingId;
+  var savedData = Object.assign({}, data);
   btn.disabled=false; btn.textContent='Save Lead';
   closeModal();
   loadLeads();
+  if (isNew) promptFollowUp(savedData);
 }
 
 // ── SCANNER ──
@@ -995,9 +1008,11 @@ async function startScan() {
   if (!photoBase64) return;
   showScanCard('sc-scanning');
   try {
+    var apiKey = document.getElementById('anthropic-key').value.trim() || localStorage.getItem('rr-api-key') || '';
+    if (!apiKey) { document.getElementById('upload-error').textContent='Please enter your Anthropic API key above.'; document.getElementById('upload-error').style.display='block'; showScanCard('sc-upload'); return; }
     var response=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
@@ -1591,6 +1606,126 @@ function saveNote(id) {
   }
 }
 
+// ── EXPORT CSV ──
+function exportCSV() {
+  if (!leads.length) { alert('No leads to export yet.'); return; }
+  var headers = ['Name','Email','Phone','School','District','Stage','Contact Pref','TRS Years','Provider','Needs','Source','Follow-up Date','Notes','Date Added'];
+  var rows = leads.map(function(l) {
+    function esc(v) { v = (v||'').toString().replace(/"/g,'""'); return '"'+v+'"'; }
+    return [esc(l.name),esc(l.email),esc(l.phone),esc(l.school),esc(l.district),esc(l.stage),esc(l.contact),esc(l.trs),esc(l.provider),esc(l.needs),esc(l.source),esc(l.followup),esc(l.notes),esc(l.date)].join(',');
+  });
+  var csv = [headers.map(function(h){return '"'+h+'"';}).join(',')].concat(rows).join('\n');
+  var blob = new Blob([csv], {type:'text/csv'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'retireready-leads-' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── GMAIL INTEGRATION ──
+function showGmailSettings() {
+  var stored = JSON.parse(localStorage.getItem('rr-gmail') || '{}');
+  var old = document.getElementById('gmail-modal-outer');
+  if (old) old.remove();
+  var div = document.createElement('div');
+  div.id = 'gmail-modal-outer';
+  div.innerHTML = '<div class="modal-bg show" id="gmail-modal-bg" onclick="if(event.target===this)closeGmailModal()">'
+    + '<div class="modal" style="max-width:500px">'
+    + '<div class="modal-header"><div class="modal-title">📧 Gmail Integration</div><button class="modal-close" onclick="closeGmailModal()">&#215;</button></div>'
+    + '<div style="background:#f0f4fc;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#1a3a8f;line-height:1.6"><strong>How this works:</strong> These templates open your Gmail compose window pre-filled — you just review and hit Send. No password needed.</div>'
+    + '<div class="modal-field"><label>Your name (signature)</label><input type="text" id="gmail-sig-name" placeholder="Jessica Goss" value="'+(stored.sigName||'Jessica Goss')+'"></div>'
+    + '<div class="modal-field" style="margin-top:10px"><label>Your email address</label><input type="email" id="gmail-from-email" placeholder="jessicagoss@summitlifegroup.com" value="'+(stored.fromEmail||'')+'"></div>'
+    + '<div class="modal-field" style="margin-top:10px"><label>Your Calendly link</label><input type="text" id="gmail-calendly" placeholder="https://calendly.com/..." value="'+(stored.calendly||'https://calendly.com/jessicagoss-summitlifegroup/30min')+'"></div>'
+    + '<div style="background:#fff8e8;border-radius:8px;padding:12px 14px;margin-top:14px">'
+    + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#b07800;margin-bottom:8px">Auto Follow-up — New Lead</div>'
+    + '<div style="font-size:11px;color:#555;line-height:1.8">Subject: <em>Quick follow-up — your retirement review</em><br>'
+    + '<input type="checkbox" id="gmail-auto-new" '+(stored.autoNew?'checked':'')+' style="margin-right:5px"><label for="gmail-auto-new" style="font-weight:500">Prompt me to email new leads after I save them</label></div></div>'
+    + '<div style="background:#e8f8ee;border-radius:8px;padding:12px 14px;margin-top:10px;margin-bottom:14px">'
+    + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#1a6e3a;margin-bottom:8px">Daily Morning Summary</div>'
+    + '<div style="font-size:11px;color:#555;line-height:1.8">Sends you a morning email with overdue follow-ups, leads due today, and meetings.<br>'
+    + '<input type="checkbox" id="gmail-daily-summary" '+(stored.dailySummary?'checked':'')+' style="margin-right:5px"><label for="gmail-daily-summary" style="font-weight:500">Enable daily morning summary</label><br>'
+    + '<label style="font-size:10px;font-weight:600;color:#1a6e3a;display:block;margin-top:6px">Send summary to</label>'
+    + '<input type="email" id="gmail-summary-email" placeholder="jessicagoss@summitlifegroup.com" value="'+(stored.summaryEmail||'')+'" style="width:100%;margin-top:3px;padding:6px 10px;border:1.5px solid #90d8a8;border-radius:6px;font-size:12px;font-family:Source Sans 3,sans-serif"></div></div>'
+    + '<div class="modal-footer"><button class="modal-cancel" onclick="closeGmailModal()">Cancel</button><button class="modal-save" onclick="saveGmailSettings()">Save Settings</button></div>'
+    + '</div></div>';
+  document.body.appendChild(div);
+}
+
+function closeGmailModal() {
+  var outer = document.getElementById('gmail-modal-outer');
+  if (outer) outer.remove();
+}
+
+function saveGmailSettings() {
+  var settings = {
+    sigName: document.getElementById('gmail-sig-name').value.trim(),
+    fromEmail: document.getElementById('gmail-from-email').value.trim(),
+    calendly: document.getElementById('gmail-calendly').value.trim(),
+    autoNew: document.getElementById('gmail-auto-new').checked,
+    dailySummary: document.getElementById('gmail-daily-summary').checked,
+    summaryEmail: document.getElementById('gmail-summary-email').value.trim()
+  };
+  localStorage.setItem('rr-gmail', JSON.stringify(settings));
+  closeGmailModal();
+  alert('Gmail settings saved!');
+  scheduleDailySummary();
+}
+
+function sendFollowUpEmail(lead) {
+  var settings = JSON.parse(localStorage.getItem('rr-gmail') || '{}');
+  var name = settings.sigName || 'Jessica Goss';
+  var calendly = settings.calendly || 'https://calendly.com/jessicagoss-summitlifegroup/30min';
+  var firstName = lead.name ? lead.name.split(' ')[0] : 'there';
+  var subject = 'Quick follow-up — your free retirement review';
+  var body = 'Hi ' + firstName + ',\n\nIt was great connecting with you' + (lead.school ? ' at ' + lead.school : '') + '! I wanted to follow up and make it easy to schedule your free 30-minute retirement review.\n\nYou can grab a time here:\n' + calendly + '\n\nThis is a no-pressure call where we will look at your current 403(b), your TRS timeline, and make sure you have a solid plan in place.\n\nLooking forward to chatting!\n\n' + name + '\nSummit Life Group';
+  var mailto = 'mailto:' + encodeURIComponent(lead.email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  window.open(mailto);
+}
+
+function promptFollowUp(lead) {
+  var settings = JSON.parse(localStorage.getItem('rr-gmail') || '{}');
+  if (!settings.autoNew || !lead || !lead.email) return;
+  setTimeout(function() {
+    if (confirm('Send a follow-up email to ' + lead.name + ' (' + lead.email + ')? Click OK to open Gmail pre-filled.')) {
+      sendFollowUpEmail(lead);
+    }
+  }, 500);
+}
+
+function sendDailySummaryEmail() {
+  var settings = JSON.parse(localStorage.getItem('rr-gmail') || '{}');
+  if (!settings.dailySummary || !settings.summaryEmail) return;
+  var today = new Date().toISOString().split('T')[0];
+  var overdue = leads.filter(function(l){return l.followup && l.followup < today && l.stage !== 'Enrolled';});
+  var dueToday = leads.filter(function(l){return l.followup === today && l.stage !== 'Enrolled';});
+  var meetingsToday = leads.filter(function(l){return l.stage === 'Meeting booked' && l.followup === today;});
+  if (!overdue.length && !dueToday.length && !meetingsToday.length) return;
+  var dateLabel = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  var body = 'Good morning! Your RetireReady summary for ' + dateLabel + '.\n\n';
+  if (overdue.length) { body += 'OVERDUE FOLLOW-UPS (' + overdue.length + '):\n'; overdue.forEach(function(l){ body += '  - ' + l.name + ' (due ' + l.followup + (l.school?', '+l.school:'') + ')\n'; }); body += '\n'; }
+  if (dueToday.length) { body += 'FOLLOW-UPS DUE TODAY (' + dueToday.length + '):\n'; dueToday.forEach(function(l){ body += '  - ' + l.name + (l.school?', '+l.school:'') + '\n'; }); body += '\n'; }
+  if (meetingsToday.length) { body += 'MEETINGS TODAY (' + meetingsToday.length + '):\n'; meetingsToday.forEach(function(l){ body += '  - ' + l.name + (l.school?', '+l.school:'') + '\n'; }); body += '\n'; }
+  body += 'Open your dashboard: https://jessicagoss-cyber.github.io/retireready/dashboard.html';
+  var subject = 'RetireReady Morning Summary — ' + dateLabel;
+  var mailto = 'mailto:' + encodeURIComponent(settings.summaryEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  window.open(mailto);
+}
+
+function scheduleDailySummary() {
+  var settings = JSON.parse(localStorage.getItem('rr-gmail') || '{}');
+  if (!settings.dailySummary) return;
+  var now = new Date();
+  var next7am = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 7, 0, 0, 0);
+  if (now >= next7am) next7am.setDate(next7am.getDate() + 1);
+  clearTimeout(window._summaryTimer);
+  window._summaryTimer = setTimeout(function() {
+    sendDailySummaryEmail();
+    setInterval(sendDailySummaryEmail, 24*60*60*1000);
+  }, next7am - now);
+}
+
 // ── DASHBOARD INIT ──
 window.addEventListener('load', function() {
   document.querySelectorAll('.view').forEach(function(v){v.style.display='none';});
@@ -1598,6 +1733,12 @@ window.addEventListener('load', function() {
   if (d) d.style.display = 'block';
   showDashTab('leads');
   initDashboard();
+  // Restore API key from localStorage
+  var savedKey = localStorage.getItem('rr-api-key');
+  var keyInput = document.getElementById('anthropic-key');
+  if (savedKey && keyInput) keyInput.value = savedKey;
+  // Start daily summary scheduler
+  scheduleDailySummary();
 });
 </script>
 </body>
